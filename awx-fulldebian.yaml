@@ -1,0 +1,126 @@
+---
+- name: Desplegar AWX completo en Kubernetes
+  hosts: all
+  become: true
+  vars:
+    awx_namespace: awx
+    awx_operator_chart: awx-operator
+    awx_operator_repo: https://ansible-community.github.io/awx-operator-helm/
+    awx_service_type: ClusterIP
+    postgres_storage_class: local-storage
+    awx_hostname: awx
+
+  tasks:
+    # -------------------------------
+    # Helm
+    # -------------------------------
+    - name: Descargar Helm
+      get_url:
+        url: https://get.helm.sh/helm-v3.14.4-linux-amd64.tar.gz
+        dest: /tmp/helm.tar.gz
+
+    - name: Extraer Helm
+      unarchive:
+        src: /tmp/helm.tar.gz
+        dest: /tmp
+        remote_src: yes
+
+    - name: Mover binario de Helm
+      command: mv /tmp/linux-amd64/helm /usr/local/bin/helm
+      args:
+        creates: /usr/local/bin/helm
+
+    # -------------------------------
+    # AWX Operator
+    # -------------------------------
+    - name: Agregar repo de AWX Operator
+      command: helm repo add awx-operator {{ awx_operator_repo }}
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+
+    - name: Actualizar repos de helm
+      command: helm repo update
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+
+    - name: Instalar AWX Operator
+      command: helm install {{ awx_operator_chart }} awx-operator/awx-operator -n {{ awx_namespace }} --create-namespace
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+
+    # -------------------------------
+    # StorageClass local
+    # -------------------------------
+    - name: Crear StorageClass local
+      copy:
+        dest: /tmp/local-storage.yaml
+        content: |
+          apiVersion: storage.k8s.io/v1
+          kind: StorageClass
+          metadata:
+            name: {{ postgres_storage_class }}
+          provisioner: kubernetes.io/no-provisioner
+          volumeBindingMode: WaitForFirstConsumer
+
+    - name: Aplicar StorageClass
+      command: kubectl apply -f /tmp/local-storage.yaml
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+
+    - name: Crear PersistentVolume para Postgres
+      copy:
+        dest: /tmp/awx-pv.yaml
+        content: |
+          apiVersion: v1
+          kind: PersistentVolume
+          metadata:
+            name: postgres-pv
+          spec:
+            capacity:
+              storage: 20Gi
+            accessModes:
+              - ReadWriteOnce
+            persistentVolumeReclaimPolicy: Retain
+            storageClassName: {{ postgres_storage_class }}
+            hostPath:
+              path: /mnt/postgres-data
+
+    - name: Aplicar PV
+      command: kubectl apply -f /tmp/awx-pv.yaml
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+
+    # -------------------------------
+    # Crear recurso AWX
+    # -------------------------------
+    - name: Crear recurso AWX
+      copy:
+        dest: /tmp/awx-deploy.yaml
+        content: |
+          apiVersion: awx.ansible.com/v1beta1
+          kind: AWX
+          metadata:
+            name: {{ awx_hostname }}
+            namespace: {{ awx_namespace }}
+          spec:
+            service_type: {{ awx_service_type }}
+            postgres_storage_class: {{ postgres_storage_class }}
+
+    - name: Aplicar AWX
+      command: kubectl apply -f /tmp/awx-deploy.yaml
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+
+    - name: Esperar a que AWX esté disponible
+      command: kubectl wait --for=condition=available --timeout=600s deployment -n {{ awx_namespace }} --all
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+
+    - name: Obtener contraseña de admin de AWX
+      command: kubectl get secret awx-admin-password -n {{ awx_namespace }} -o jsonpath="{.data.password}" | base64 --decode
+      register: admin_pass
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+
+    - debug:
+        msg: "Contraseña inicial de AWX: {{ admin_pass.stdout }}"
