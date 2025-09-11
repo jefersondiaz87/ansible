@@ -1,0 +1,12 @@
+---
+- name: Consultar OS Release en Linux
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Leer contenido de /etc/os-release
+      ansible.builtin.shell: cat /etc/os-release
+      register: os_release_output
+
+    - name: Mostrar resultado del OS Release
+      ansible.builtin.debug:
+        var: os_release_output.stdout
