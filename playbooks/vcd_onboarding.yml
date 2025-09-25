@@ -1,0 +1,64 @@
+- name: Onboarding cliente en VMware Cloud Director
+  hosts: localhost
+  gather_facts: no
+  collections:
+    - vmware.cloud.vcd
+
+  tasks:
+    - name: Crear organización en vCD
+      vcd_org:
+        host: "{{ vcd_host }}"
+        org: "{{ vcd_org }}"
+        user: "{{ vcd_user }}"
+        password: "{{ vcd_password }}"
+        verify_ssl_certs: "{{ verify_ssl }}"
+        name: "{{ org_name }}"
+        full_name: "{{ org_name }}"
+        is_enabled: true
+        state: present
+
+    - name: Crear VDC para la organización
+      vcd_vdc:
+        host: "{{ vcd_host }}"
+        org: "{{ vcd_org }}"
+        user: "{{ vcd_user }}"
+        password: "{{ vcd_password }}"
+        verify_ssl_certs: "{{ verify_ssl }}"
+        org_name: "{{ org_name }}"
+        name: "{{ vdc_name }}"
+        provider_vdc: "{{ provider_vdc }}"
+        allocation_model: "{{ allocation_model }}"
+        cpu_units: "MHz"
+        cpu_allocated: "{{ cpu_quota * 1000 }}"
+        memory_allocated: "{{ memory_quota }}"
+        storage_profiles:
+          - name: "StorageProfile1"
+            limit: "{{ storage_quota }}"
+        state: present
+
+    - name: Crear red para el VDC
+      vcd_network_routed:
+        host: "{{ vcd_host }}"
+        org: "{{ vcd_org }}"
+        user: "{{ vcd_user }}"
+        password: "{{ vcd_password }}"
+        verify_ssl_certs: "{{ verify_ssl }}"
+        vdc_name: "{{ vdc_name }}"
+        name: "{{ network_name }}"
+        gateway_name: "{{ gateway_name }}"
+        subnet: "{{ subnet }}"
+        dns1: "{{ dns1 }}"
+        state: present
+
+    - name: Crear usuario administrador del cliente
+      vcd_user:
+        host: "{{ vcd_host }}"
+        org: "{{ org_name }}"
+        user: "{{ vcd_user }}"
+        password: "{{ vcd_password }}"
+        verify_ssl_certs: "{{ verify_ssl }}"
+        name: "{{ user_email }}"
+        full_name: "{{ first_name }} {{ last_name }}"
+        email: "{{ user_email }}"
+        role_name: "{{ role_name }}"
+        state: present
