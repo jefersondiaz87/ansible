@@ -1,64 +1,81 @@
-- name: Onboarding cliente en VMware Cloud Director
+---
+- name: vCD Onboarding equivalente al workflow VRO
   hosts: localhost
   gather_facts: no
-  collections:
-    - vmware.cloud.vcd
+  vars:
+    # Parámetros de conexión a vCD (todos pueden venir de extra_vars o inventory)
+    vcd_host: "{{ vcd_host | default('https://vcd.example.com') }}"
+    vcd_user: "{{ vcd_user | default('administrator') }}"
+    vcd_password: "{{ vcd_password | default('SuperSecret') }}"
+    vcd_org: "{{ vcd_org | default('System') }}"
+
+    # Variables inputs del workflow
+    orgFullName: "{{ orgFullName | default('Org Demo') }}"
+    orgVdcName: "{{ orgVdcName | default('OrgVDC-Demo') }}"
+    cpuQuota: "{{ cpuQuota | default(10) }}"
+    memoryQuota: "{{ memoryQuota | default(20480) }}" # MB
+    storageQuota: "{{ storageQuota | default(1000) }}" # GB
+    email: "{{ email | default('demo@example.com') }}"
+    firstName: "{{ firstName | default('John') }}"
+    lastName: "{{ lastName | default('Doe') }}"
+    networkType: "{{ networkType | default('routed') }}"
+    trial: "{{ trial | default(true) }}"
 
   tasks:
+    - name: Mostrar parámetros de entrada
+      debug:
+        msg:
+          vcd_host: "{{ vcd_host }}"
+          orgFullName: "{{ orgFullName }}"
+          orgVdcName: "{{ orgVdcName }}"
+          cpuQuota: "{{ cpuQuota }}"
+          memoryQuota: "{{ memoryQuota }}"
+          storageQuota: "{{ storageQuota }}"
+          email: "{{ email }}"
+          firstName: "{{ firstName }}"
+          lastName: "{{ lastName }}"
+          networkType: "{{ networkType }}"
+          trial: "{{ trial }}"
+
     - name: Crear organización en vCD
-      vcd_org:
-        host: "{{ vcd_host }}"
-        org: "{{ vcd_org }}"
-        user: "{{ vcd_user }}"
-        password: "{{ vcd_password }}"
-        verify_ssl_certs: "{{ verify_ssl }}"
-        name: "{{ org_name }}"
-        full_name: "{{ org_name }}"
+      community.vmware.vcd_org:
+        org_name: "{{ orgFullName }}"
+        full_name: "{{ orgFullName }}"
         is_enabled: true
-        state: present
+        vcd_hostname: "{{ vcd_host }}"
+        vcd_user: "{{ vcd_user }}"
+        vcd_password: "{{ vcd_password }}"
+        vcd_org: "{{ vcd_org }}"
+        validate_certs: false
 
-    - name: Crear VDC para la organización
-      vcd_vdc:
-        host: "{{ vcd_host }}"
-        org: "{{ vcd_org }}"
-        user: "{{ vcd_user }}"
-        password: "{{ vcd_password }}"
-        verify_ssl_certs: "{{ verify_ssl }}"
-        org_name: "{{ org_name }}"
-        name: "{{ vdc_name }}"
-        provider_vdc: "{{ provider_vdc }}"
-        allocation_model: "{{ allocation_model }}"
+    - name: Crear VDC en la organización
+      community.vmware.vcd_vdc:
+        org_name: "{{ orgFullName }}"
+        vdc_name: "{{ orgVdcName }}"
+        description: "VDC creado via Ansible"
+        allocation_model: "ReservationPool"
         cpu_units: "MHz"
-        cpu_allocated: "{{ cpu_quota * 1000 }}"
-        memory_allocated: "{{ memory_quota }}"
+        cpu_allocated: "{{ cpuQuota * 1000 }}" # Ejemplo conversión a MHz
+        memory_units: "MB"
+        memory_allocated: "{{ memoryQuota }}"
         storage_profiles:
-          - name: "StorageProfile1"
-            limit: "{{ storage_quota }}"
-        state: present
+          - name: "Storage-Profile-Default"
+            limit: "{{ storageQuota * 1024 }}" # GB → MB
+        vcd_hostname: "{{ vcd_host }}"
+        vcd_user: "{{ vcd_user }}"
+        vcd_password: "{{ vcd_password }}"
+        vcd_org: "{{ vcd_org }}"
+        validate_certs: false
 
-    - name: Crear red para el VDC
-      vcd_network_routed:
-        host: "{{ vcd_host }}"
-        org: "{{ vcd_org }}"
-        user: "{{ vcd_user }}"
-        password: "{{ vcd_password }}"
-        verify_ssl_certs: "{{ verify_ssl }}"
-        vdc_name: "{{ vdc_name }}"
-        name: "{{ network_name }}"
-        gateway_name: "{{ gateway_name }}"
-        subnet: "{{ subnet }}"
-        dns1: "{{ dns1 }}"
-        state: present
-
-    - name: Crear usuario administrador del cliente
-      vcd_user:
-        host: "{{ vcd_host }}"
-        org: "{{ org_name }}"
-        user: "{{ vcd_user }}"
-        password: "{{ vcd_password }}"
-        verify_ssl_certs: "{{ verify_ssl }}"
-        name: "{{ user_email }}"
-        full_name: "{{ first_name }} {{ last_name }}"
-        email: "{{ user_email }}"
-        role_name: "{{ role_name }}"
-        state: present
+    - name: Crear red en el VDC
+      community.vmware.vcd_vdc_network:
+        org_name: "{{ orgFullName }}"
+        vdc_name: "{{ orgVdcName }}"
+        network_name: "{{ orgVdcName }}-network"
+        network_type: "{{ networkType }}"
+        description: "Red creada via Ansible"
+        vcd_hostname: "{{ vcd_host }}"
+        vcd_user: "{{ vcd_user }}"
+        vcd_password: "{{ vcd_password }}"
+        vcd_org: "{{ vcd_org }}"
+        validate_certs: false
