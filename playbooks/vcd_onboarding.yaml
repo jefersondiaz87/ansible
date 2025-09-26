@@ -1,31 +1,37 @@
 ---
-- name: vCD Onboarding equivalente al workflow VRO
+- name: Onboarding Tenant con CloudBlue y vCloud Director
   hosts: localhost
+  connection: local
   gather_facts: no
-  vars:
-    # Parámetros de conexión a vCD (todos pueden venir de extra_vars o inventory)
-    vcd_host: "{{ vcd_host | default('https://vcd.example.com') }}"
-    vcd_user: "{{ vcd_user | default('administrator') }}"
-    vcd_password: "{{ vcd_password | default('SuperSecret') }}"
-    vcd_org: "{{ vcd_org | default('System') }}"
 
-    # Variables inputs del workflow
-    orgFullName: "{{ orgFullName | default('Org Demo') }}"
-    orgVdcName: "{{ orgVdcName | default('OrgVDC-Demo') }}"
-    cpuQuota: "{{ cpuQuota | default(10) }}"
-    memoryQuota: "{{ memoryQuota | default(20480) }}" # MB
-    storageQuota: "{{ storageQuota | default(1000) }}" # GB
-    email: "{{ email | default('demo@example.com') }}"
-    firstName: "{{ firstName | default('John') }}"
-    lastName: "{{ lastName | default('Doe') }}"
-    networkType: "{{ networkType | default('routed') }}"
-    trial: "{{ trial | default(true) }}"
+  vars:
+    # --- CloudBlue API ---
+    cloudblue_host: "https://cloudblue.miempresa.com"
+    cloudblue_user: "apiuser"
+    cloudblue_pass: "SuperSecret"
+
+    # --- vCloud Director ---
+    vcd_org: "System" # Org admin (System)
+    vcd_user: "admin" # Usuario admin vCD
+    vcd_password: "SuperSecret" # Password admin vCD
+    vcd_verify_ssl_certs: false
+    provider_vdc_name: "ProviderVDC"
+    network_pool_name: "default-pool"
+    storage_profile: "default"
 
   tasks:
-    - name: Mostrar parámetros de entrada
-      debug:
-        msg:
-          vcd_host: "{{ vcd_host }}"
+    # Paso 1: Crear Tenant en CloudBlue
+    - name: Crear Tenant en CloudBlue
+      uri:
+        url: "{{ cloudblue_host }}/aps/2/resources/tenants"
+        method: POST
+        user: "{{ cloudblue_user }}"
+        password: "{{ cloudblue_pass }}"
+        force_basic_auth: yes
+        headers:
+          Content-Type: "application/json"
+        body_format: json
+        body:
           orgFullName: "{{ orgFullName }}"
           orgVdcName: "{{ orgVdcName }}"
           cpuQuota: "{{ cpuQuota }}"
@@ -36,46 +42,54 @@
           lastName: "{{ lastName }}"
           networkType: "{{ networkType }}"
           trial: "{{ trial }}"
+        status_code: 201
+      register: cloudblue_tenant
 
-    - name: Crear organización en vCD
+    # Paso 2: Crear Org en vCloud Director
+    - name: Crear Organización en vCD
       community.vmware.vcd_org:
-        org_name: "{{ orgFullName }}"
-        full_name: "{{ orgFullName }}"
+        user: "{{ vcd_user }}"
+        password: "{{ vcd_password }}"
+        org: "{{ vcd_org }}"
+        host: "{{ vcd_host }}" # <<--- aquí está la variable que debes pasar en extra_vars
+        verify_ssl_certs: "{{ vcd_verify_ssl_certs }}"
+        name: "{{ orgFullName }}"
         is_enabled: true
-        vcd_hostname: "{{ vcd_host }}"
-        vcd_user: "{{ vcd_user }}"
-        vcd_password: "{{ vcd_password }}"
-        vcd_org: "{{ vcd_org }}"
-        validate_certs: false
+        state: present
 
-    - name: Crear VDC en la organización
-      community.vmware.vcd_vdc:
-        org_name: "{{ orgFullName }}"
-        vdc_name: "{{ orgVdcName }}"
-        description: "VDC creado via Ansible"
-        allocation_model: "ReservationPool"
-        cpu_units: "MHz"
-        cpu_allocated: "{{ cpuQuota * 1000 }}" # Ejemplo conversión a MHz
-        memory_units: "MB"
-        memory_allocated: "{{ memoryQuota }}"
+    # Paso 3: Crear VDC en vCD
+    - name: Crear VDC en vCD
+      community.vmware.vcd_org_vdc:
+        user: "{{ vcd_user }}"
+        password: "{{ vcd_password }}"
+        org: "{{ vcd_org }}"
+        host: "{{ vcd_host }}" # <<--- también aquí
+        verify_ssl_certs: "{{ vcd_verify_ssl_certs }}"
+        target_org: "{{ orgFullName }}"
+        name: "{{ orgVdcName }}"
+        allocation_model: "AllocationPool"
+        cpu_quota: "{{ cpuQuota }}"
+        memory_quota: "{{ memoryQuota }}"
         storage_profiles:
-          - name: "Storage-Profile-Default"
-            limit: "{{ storageQuota * 1024 }}" # GB → MB
-        vcd_hostname: "{{ vcd_host }}"
-        vcd_user: "{{ vcd_user }}"
-        vcd_password: "{{ vcd_password }}"
-        vcd_org: "{{ vcd_org }}"
-        validate_certs: false
+          - name: "{{ storage_profile }}"
+            limit: "{{ storageQuota }}"
+        network_pool_name: "{{ network_pool_name }}"
+        provider_vdc_name: "{{ provider_vdc_name }}"
+        state: present
 
-    - name: Crear red en el VDC
-      community.vmware.vcd_vdc_network:
-        org_name: "{{ orgFullName }}"
-        vdc_name: "{{ orgVdcName }}"
-        network_name: "{{ orgVdcName }}-network"
-        network_type: "{{ networkType }}"
-        description: "Red creada via Ansible"
-        vcd_hostname: "{{ vcd_host }}"
-        vcd_user: "{{ vcd_user }}"
-        vcd_password: "{{ vcd_password }}"
-        vcd_org: "{{ vcd_org }}"
-        validate_certs: false
+    # Paso 4: Crear usuario admin en vCD
+    - name: Crear usuario admin del Tenant
+      community.vmware.vcd_user:
+        user: "{{ vcd_user }}"
+        password: "{{ vcd_password }}" # Auth en vCD
+        org: "{{ vcd_org }}"
+        host: "{{ vcd_host }}"
+        verify_ssl_certs: "{{ vcd_verify_ssl_certs }}"
+        target_org: "{{ orgFullName }}"
+        name: "{{ firstName }}{{ lastName }}"
+        role_name: "Organization Administrator"
+        user_password: "{{ tenant_user_password }}" # Password del nuevo usuario
+        full_name: "{{ firstName }} {{ lastName }}"
+        email: "{{ email }}"
+        enabled: true
+        state: present
