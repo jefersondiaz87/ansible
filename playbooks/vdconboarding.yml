@@ -1,0 +1,20 @@
+---
+- name: VDConboarding Orchestration
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars_files:
+    # Puedes cargar variables globales aquí si quieres centralizar
+    - ../roles/organization/vars/main.yml
+    - ../roles/orgvcd/vars/main.yml
+    - ../roles/network/vars/main.yml
+    - ../roles/usermanagement/vars/main.yml
+    - ../roles/email/vars/main.yml
+
+  roles:
+    - role: organization
+    - role: orgvcd
+    - role: network
+    - role: usermanagement
+    - role: email

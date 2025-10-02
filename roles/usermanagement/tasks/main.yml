@@ -1,0 +1,28 @@
+---
+# Crear usuario en vIDM vía API
+- name: Create vIDM User
+  ansible.builtin.uri:
+    url: "{{ vidm_url }}/users"
+    method: POST
+    user: "{{ vidm_admin }}"
+    password: "{{ vidm_password }}"
+    body_format: json
+    body:
+      userName: "{{ new_user }}"
+      emails:
+        - value: "{{ new_user_email }}"
+      name:
+        givenName: "{{ new_user_first }}"
+        familyName: "{{ new_user_last }}"
+    status_code: 201
+    force_basic_auth: yes
+
+# Eliminar usuario en vIDM
+- name: Delete vIDM User
+  ansible.builtin.uri:
+    url: "{{ vidm_url }}/users/{{ user_id }}"
+    method: DELETE
+    user: "{{ vidm_admin }}"
+    password: "{{ vidm_password }}"
+    status_code: 204
+    force_basic_auth: yes

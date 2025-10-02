@@ -1,0 +1,6 @@
+---
+vdc_name: "VDC-Demo"
+provider_vdc: "ProviderVDC1"
+storage_profile: "Default"
+placement_policy: "High-Performance"
+sizing_policy: "Standard"

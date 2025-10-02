@@ -1,0 +1,41 @@
+---
+# Crear Edge Gateway
+- name: Create Edge Gateway
+  community.vmware.vmware_vcd_edgegateway:
+    hostname: "{{ vcd_hostname }}"
+    username: "{{ vcd_username }}"
+    password: "{{ vcd_password }}"
+    org_name: "{{ org_name }}"
+    vdc_name: "{{ vdc_name }}"
+    name: "{{ edge_name }}"
+    state: present
+  delegate_to: localhost
+
+# Crear regla NAT
+- name: Create NAT Rule
+  community.vmware.vmware_vcd_nat_rule:
+    hostname: "{{ vcd_hostname }}"
+    username: "{{ vcd_username }}"
+    password: "{{ vcd_password }}"
+    org_name: "{{ org_name }}"
+    vdc_name: "{{ vdc_name }}"
+    edge_gateway: "{{ edge_name }}"
+    rule_type: "SNAT"
+    original_ip: "{{ internal_network }}"
+    translated_ip: "{{ public_ip }}"
+    state: present
+  delegate_to: localhost
+
+# Crear ruta estática
+- name: Create Static Route
+  community.vmware.vmware_vcd_static_route:
+    hostname: "{{ vcd_hostname }}"
+    username: "{{ vcd_username }}"
+    password: "{{ vcd_password }}"
+    org_name: "{{ org_name }}"
+    vdc_name: "{{ vdc_name }}"
+    edge_gateway: "{{ edge_name }}"
+    network: "{{ route_network }}"
+    next_hop: "{{ next_hop }}"
+    state: present
+  delegate_to: localhost
