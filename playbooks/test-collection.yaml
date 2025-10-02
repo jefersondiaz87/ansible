@@ -1,11 +1,9 @@
-- name: Validate EE and collection
+---
+- name: Verificar VMware collection
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: List installed collections
-      ansible.builtin.command: ansible-galaxy collection list
-      register: result
-
-    - name: Show result
+    - name: Mostrar version de la collection community.vmware
       ansible.builtin.debug:
-        var: result.stdout_lines
+        msg: "{{ lookup('ansible.builtin.collection_version', 'community.vmware') }}"
+
