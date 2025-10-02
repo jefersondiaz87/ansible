@@ -1,0 +1,7 @@
+- name: Test VMware Collection
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Check collection availability
+      ansible.builtin.debug:
+        msg: "{{ lookup('ansible.builtin.config', 'collections_paths') }}"
