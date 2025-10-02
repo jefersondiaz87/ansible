@@ -1,7 +1,11 @@
-- name: Test VMware Collection
+- name: Validate EE and collection
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: Check collection availability
+    - name: List installed collections
+      ansible.builtin.command: ansible-galaxy collection list
+      register: result
+
+    - name: Show result
       ansible.builtin.debug:
-        msg: "{{ lookup('ansible.builtin.config', 'collections_paths') }}"
+        var: result.stdout_lines
