@@ -1,11 +1,12 @@
-- name: Validate EE and collection
+---
+- name: Verificar VMware collection
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: List installed collections
+    - name: Listar colecciones instaladas
       ansible.builtin.command: ansible-galaxy collection list
       register: result
 
-    - name: Show result
+    - name: Mostrar resultado
       ansible.builtin.debug:
-        var: result.stdout_lines
+        var: result.stdout
