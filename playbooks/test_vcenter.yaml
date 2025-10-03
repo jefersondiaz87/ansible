@@ -1,48 +1,51 @@
 ---
-- name: Test de conectividad con VMware VCD
+- name: Probar conexión a VCD y acceso a la API REST
   hosts: localhost
-  gather_facts: no
+  connection: local
+  gather_facts: false
+
   vars:
-    vcenter_hostname: "{{ vcenter_hostname | default('https://vcd-lab.clarocloud.com') }}"
-    vcenter_username: "{{ vcenter_username | default('usuario@system') }}"
-    vcenter_password: "{{ vcenter_password | default('SuperSecreta') }}"
-    vcenter_org: "{{ vcenter_org | default('system') }}"
-    vcenter_verify_ssl: false
+    # Se obtienen de las variables extra o de AWX
+    vcd_host: "{{ vcenter_hostname }}"
+    vcd_user: "{{ vcenter_username }}"
+    vcd_password: "{{ vcenter_password }}"
+    vcd_org: "{{ vcenter_org }}"
+    api_version: "36.0" # Ajusta según tu versión de VCD
 
   tasks:
-    - name: Probar resolución DNS hacia VCD
-      ansible.builtin.getent:
-        database: hosts
-        key: "{{ vcenter_hostname | regex_replace('^https?://', '') }}"
-      register: dns_check
-      ignore_errors: true
-
-    - name: Mostrar resultado DNS
-      debug:
-        var: dns_check.ansible_facts.getent_hosts
-
-    - name: Probar conexión HTTPS hacia VCD (sin validar certificado)
+    - name: 1. Autenticarse en VCD para obtener el token de sesión
       ansible.builtin.uri:
-        url: "{{ vcenter_hostname }}/api/sessions"
-        method: GET
-        validate_certs: no
-        return_content: no
-      register: http_check
+        url: "{{ vcd_host }}/api/sessions"
+        method: POST
+        user: "{{ vcd_user }}"
+        password: "{{ vcd_password }}"
+        headers:
+          Accept: "application/*+json;version={{ api_version }}"
+        validate_certs: false
+        status_code: 200
+      register: auth_result
       ignore_errors: true
 
-    - name: Mostrar resultado HTTPS
-      debug:
-        var: http_check.status
+    - name: Manejar error de autenticación
+      ansible.builtin.fail:
+        msg: "Error de autenticación: {{ auth_result.msg | default('Desconocido') }}"
+      when: auth_result is failed
 
-    - name: Conectar al VCD y obtener información de la organización
-      vmware.cloud_director.vmware_vcd_org_info:
-        org: "NombreOrg"
-        user: "{{ vcenter_username }}"
-        password: "{{ vcenter_password }}"
-        host: "{{ vcenter_hostname }}"
-        verify_ssl_certs: false
-      register: org_info
+    - name: 2. Capturar el token de autorización
+      ansible.builtin.set_fact:
+        vcd_token: "{{ auth_result.x_vcloud_authorization }}"
 
-    - name: Mostrar info de la organización en VCD
-      debug:
-        var: vcd_info
+    - name: 3. Probar consumo REST con el token obtenido
+      ansible.builtin.uri:
+        url: "{{ vcd_host }}/api/admin/orgs"
+        method: GET
+        headers:
+          Accept: "application/*+json;version={{ api_version }}"
+          x-vcloud-authorization: "{{ vcd_token }}"
+        validate_certs: false
+        status_code: 200
+      register: orgs_response
+
+    - name: 4. Imprimir la lista de organizaciones
+      ansible.builtin.debug:
+        msg: "Conexión a VCD exitosa. Organizaciones: {{ orgs_response.json.org | map(attribute='name') | list }}"
