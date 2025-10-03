@@ -17,7 +17,7 @@
 
     - name: Mostrar resultado DNS
       ansible.builtin.debug:
-        var: dns_check.stdout
+        var: dns_check.ansible_facts.getent_hosts
 
     - name: Verificar puerto 443 abierto en vCenter
       ansible.builtin.wait_for:
