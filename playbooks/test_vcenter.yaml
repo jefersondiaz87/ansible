@@ -1,0 +1,16 @@
+---
+- name: Probar conexión a vCenter
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Obtener información del vCenter
+      community.vmware.vmware_about_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: false
+      register: vcenter_info
+
+    - name: Mostrar datos del vCenter
+      ansible.builtin.debug:
+        var: vcenter_info
