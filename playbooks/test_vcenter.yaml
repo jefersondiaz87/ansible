@@ -9,7 +9,9 @@
 
   tasks:
     - name: Probar resolución DNS hacia vCenter
-      ansible.builtin.command: nslookup {{ vcenter_hostname }}
+      ansible.builtin.getent:
+        database: hosts
+        key: vcd-lab.clarocloud.com
       register: dns_check
       ignore_errors: true
 
