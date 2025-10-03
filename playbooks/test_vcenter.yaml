@@ -1,16 +1,43 @@
 ---
-- name: Probar conexión a vCenter
+- name: Test de conectividad y credenciales VMware
   hosts: localhost
   gather_facts: false
+  vars:
+    vcenter_hostname: "{{ lookup('env', 'VCENTER_HOST') | default('vcenter.miempresa.local') }}"
+    vcenter_username: "{{ lookup('env', 'VCENTER_USER') | default('administrator@vsphere.local') }}"
+    vcenter_password: "{{ lookup('env', 'VCENTER_PASS') | default('SuperSecret!') }}"
+
   tasks:
-    - name: Obtener información del vCenter
+    - name: Probar resolución DNS hacia vCenter
+      ansible.builtin.command: nslookup {{ vcenter_hostname }}
+      register: dns_check
+      ignore_errors: true
+
+    - name: Mostrar resultado DNS
+      ansible.builtin.debug:
+        var: dns_check.stdout
+
+    - name: Verificar puerto 443 abierto en vCenter
+      ansible.builtin.wait_for:
+        host: "{{ vcenter_hostname }}"
+        port: 443
+        timeout: 10
+      register: port_check
+      ignore_errors: true
+
+    - name: Mostrar resultado de puerto
+      ansible.builtin.debug:
+        var: port_check
+
+    - name: Conectar al vCenter y obtener información
       community.vmware.vmware_about_info:
         hostname: "{{ vcenter_hostname }}"
         username: "{{ vcenter_username }}"
         password: "{{ vcenter_password }}"
         validate_certs: false
       register: vcenter_info
+      ignore_errors: true
 
-    - name: Mostrar datos del vCenter
+    - name: Mostrar info del vCenter
       ansible.builtin.debug:
         var: vcenter_info
