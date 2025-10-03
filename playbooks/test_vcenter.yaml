@@ -35,14 +35,13 @@
         var: http_check.status
 
     - name: Conectar al VCD y obtener información de la organización
-      community.vmware.vmware_vcd_org_info:
-        hostname: "{{ vcenter_hostname | regex_replace('^https?://', '') }}"
-        username: "{{ vcenter_username }}"
+      vmware.cloud_director.vmware_vcd_org_info:
+        org: "NombreOrg"
+        user: "{{ vcenter_username }}"
         password: "{{ vcenter_password }}"
-        org: "{{ vcenter_org }}"
-        verify_ssl_certs: "{{ vcenter_verify_ssl }}"
-      register: vcd_info
-      ignore_errors: true
+        host: "{{ vcenter_hostname }}"
+        verify_ssl_certs: false
+      register: org_info
 
     - name: Mostrar info de la organización en VCD
       debug:
