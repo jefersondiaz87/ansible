@@ -1,16 +1,29 @@
 ---
-- name: VDConboarding Orchestration
+- name: VMware Cloud Director Onboarding - AWX Orchestration
   hosts: localhost
   connection: local
   gather_facts: no
 
-  vars_files:
-    # Puedes cargar variables globales aquí si quieres centralizar
-    - ../roles/organization/vars/main.yml
-    - ../roles/orgvcd/vars/main.yml
-    - ../roles/network/vars/main.yml
-    - ../roles/usermanagement/vars/main.yml
-    - ../roles/email/vars/main.yml
+  vars:
+    # ⚙️ Variables de conexión al VCD — inyectadas desde credenciales de AWX
+    vcd_hostname: "{{ lookup('env', 'VCD_HOST') }}"
+    vcd_org: "{{ lookup('env', 'VCD_ORG') }}"
+    vcd_user: "{{ lookup('env', 'VCD_USER') }}"
+    vcd_password: "{{ lookup('env', 'VCD_PASSWORD') }}"
+    vcd_verify_ssl_certs: "{{ lookup('env', 'VCD_VERIFY_SSL_CERTS') | default(false) }}"
+    vcd_api_version: "{{ lookup('env', 'VCD_API_VERSION') | default('39.1') }}"
+
+    # 📦 Datos dinámicos — enviados desde survey o extra_vars
+    orgFullName: "{{ orgFullName }}"
+    orgVdcName: "{{ orgVdcName }}"
+    cpuQuota: "{{ cpuQuota }}"
+    memoryQuota: "{{ memoryQuota }}"
+    storageQuota: "{{ storageQuota }}"
+    mail: "{{ mail }}"
+    firstName: "{{ firstName }}"
+    lastName: "{{ lastName }}"
+    networkType: "{{ networkType }}"
+    trial: "{{ trial | default(false) }}"
 
   roles:
     - role: organization
