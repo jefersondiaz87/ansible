@@ -1,51 +1,69 @@
 ---
-# Crear un VDC
-- name: Create Org VDC
-  community.vmware.vmware_vcd_vdc:
-    hostname: "{{ vcd_hostname }}"
-    username: "{{ vcd_username }}"
+# Crear un VDC en VMware Cloud Director
+- name: Crear Org VDC
+  vcd_vdc:
+    user: "{{ vcd_username }}"
     password: "{{ vcd_password }}"
+    host: "{{ vcd_hostname }}"
+    org: "System"
+    api_version: "39.1"
+    verify_ssl_certs: false
+
     org_name: "{{ org_name }}"
-    vdc_name: "{{ vdc_name }}"
-    provider_vdc_name: "{{ provider_vdc }}"
+    name: "{{ vdc_name }}"
+    provider_vdc: "{{ provider_vdc }}"
     allocation_model: "ReservationPool"
-    storage_profile: "{{ storage_profile }}"
+    storage_profiles:
+      - name: "{{ storage_profile }}"
     state: present
   delegate_to: localhost
 
 # Añadir política de colocación
-- name: Add Placement Policy
-  community.vmware.vmware_vcd_vdc:
-    hostname: "{{ vcd_hostname }}"
-    username: "{{ vcd_username }}"
+- name: Añadir Placement Policy
+  vcd_vdc:
+    user: "{{ vcd_username }}"
     password: "{{ vcd_password }}"
+    host: "{{ vcd_hostname }}"
+    org: "System"
+    api_version: "39.1"
+    verify_ssl_certs: false
+
     org_name: "{{ org_name }}"
-    vdc_name: "{{ vdc_name }}"
+    name: "{{ vdc_name }}"
     placement_policy: "{{ placement_policy }}"
     state: update
   delegate_to: localhost
 
 # Añadir política de dimensionamiento
-- name: Add Sizing Policy
-  community.vmware.vmware_vcd_vdc:
-    hostname: "{{ vcd_hostname }}"
-    username: "{{ vcd_username }}"
+- name: Añadir Sizing Policy
+  vcd_vdc:
+    user: "{{ vcd_username }}"
     password: "{{ vcd_password }}"
+    host: "{{ vcd_hostname }}"
+    org: "System"
+    api_version: "39.1"
+    verify_ssl_certs: false
+
     org_name: "{{ org_name }}"
-    vdc_name: "{{ vdc_name }}"
+    name: "{{ vdc_name }}"
     sizing_policy: "{{ sizing_policy }}"
     state: update
   delegate_to: localhost
 
 # Metadata Trial Mode
-- name: Set Trial Mode Metadata
-  community.vmware.vmware_vcd_metadata:
-    hostname: "{{ vcd_hostname }}"
-    username: "{{ vcd_username }}"
+- name: Asignar metadata Trial Mode
+  vcd_metadata:
+    user: "{{ vcd_username }}"
     password: "{{ vcd_password }}"
-    org_name: "{{ org_name }}"
-    vdc_name: "{{ vdc_name }}"
+    host: "{{ vcd_hostname }}"
+    org: "{{ org_name }}"
+    api_version: "39.1"
+    verify_ssl_certs: false
+
+    target_type: "vdc"
+    target_name: "{{ vdc_name }}"
     key: "TrialMode"
     value: "true"
     type: "STRING"
+    state: present
   delegate_to: localhost

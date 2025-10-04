@@ -1,28 +1,22 @@
 ---
 # Crear una organización en VMware Cloud Director
-- name: Crear organización en VCD
-  vcd_org:
-    user: "{{ vcd_username }}"
+- name: Create Organization
+  community.vmware.vmware_vcd_org:
+    hostname: "{{ vcd_hostname }}"
+    username: "{{ vcd_username }}"
     password: "{{ vcd_password }}"
-    host: "{{ vcd_hostname }}"
-    org: "System"
-    api_version: "39.1"
-    verify_ssl_certs: false
-    name: "{{ org_name }}"
+    org_name: "{{ org_name }}"
     full_name: "{{ org_full_name }}"
     is_enabled: true
     state: present
   delegate_to: localhost
 
 # Eliminar organización
-- name: Eliminar organización en VCD
-  vcd_org:
-    user: "{{ vcd_username }}"
+- name: Delete Organization
+  community.vmware.vmware_vcd_org:
+    hostname: "{{ vcd_hostname }}"
+    username: "{{ vcd_username }}"
     password: "{{ vcd_password }}"
-    host: "{{ vcd_hostname }}"
-    org: "System"
-    api_version: "39.1"
-    verify_ssl_certs: false
-    name: "{{ org_name }}"
+    org_name: "{{ org_name }}"
     state: absent
   delegate_to: localhost
