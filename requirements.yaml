@@ -3,6 +3,6 @@ collections:
   - name: community.vmware
     version: ">=3.0.0"
   - name: ansible.utils
-  - name: ansible-module-vcloud-director
+  - name: vmware.vcd
     type: git
     source: https://github.com/vmware/ansible-module-vcloud-director.git
