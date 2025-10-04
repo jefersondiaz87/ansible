@@ -22,6 +22,7 @@
         return_content: yes
         validate_certs: false
         status_code: 200
+        timeout: 60
       register: token_response
       ignore_errors: true
 
@@ -51,6 +52,7 @@
         return_content: yes
         validate_certs: false
         status_code: 200
+        timeout: 60
       register: test_response
 
     - name: 4. Mostrar resultado de conexión
