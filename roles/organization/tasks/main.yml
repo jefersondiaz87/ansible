@@ -15,6 +15,7 @@
           name: "{{ vcd.orgFullName }}"
           displayName: "{{ vcd.orgFullName }}"
           description: "Organización creada vía API"
+          isEnabled: true
         status_code: [201, 409] # 409 = ya existe
         validate_certs: "{{ vcd.verify_ssl }}"
       register: org_create
