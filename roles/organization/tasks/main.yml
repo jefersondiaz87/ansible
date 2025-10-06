@@ -9,7 +9,7 @@
     headers:
       x-vcloud-authorization: "{{ vcd.access_token }}"
       Content-Type: "application/json"
-      Accept: "application/*+json;version=1.0"
+      Accept: "application/*+json;version={{api_version}}"
     body_format: json
     body:
       name: "{{ vcd.orgFullName }}"
