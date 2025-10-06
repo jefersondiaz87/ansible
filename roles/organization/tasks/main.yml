@@ -15,7 +15,6 @@
     body:
       name: "{{ vcd.orgFullName }}"
       displayName: "{{ vcd.orgFullName }}"
-      isEnabled: true
     status_code: [201, 200]
     validate_certs: "{{ vcd.verify_ssl_certs | default(false) }}"
   register: org_create
