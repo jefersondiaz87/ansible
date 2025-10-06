@@ -15,12 +15,6 @@
       name: "{{ vcd.orgFullName }}"
       displayName: "{{ vcd.orgFullName }}"
       description: "Organización creada vía API"
-      owner:
-        userName: "admin_{{ vcd.orgFullName | lower | replace(' ', '_') }}"
-        fullName: "{{ vcd.firstName }} {{ vcd.lastName }}"
-        email: "{{ vcd.mail }}"
-        role: "organizationAdmin"
-        enabled: true
 
     status_code: [201, 409] # 409 = ya existe
     validate_certs: "{{ vcd.verify_ssl | default(false) }}"
