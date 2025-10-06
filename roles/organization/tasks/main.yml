@@ -13,7 +13,7 @@
     body_format: json
     body:
       name: "{{ vcd.orgFullName }}"
-      fullName: "{{ vcd.orgFullName }}"
+      displayName: "{{ vcd.orgFullName }}"
       description: "Organización creada vía API"
       settings:
         loginBanner: "Bienvenido a {{ vcd.orgFullName }}"
