@@ -45,7 +45,6 @@
     - name: Guardar token JWT
       ansible.builtin.set_fact:
         vcd_access_token: "{{ vcd_auth_response.json.access_token }}"
-      cacheable: true
 
     - name: Mostrar token temporal (debug)
       ansible.builtin.debug:
