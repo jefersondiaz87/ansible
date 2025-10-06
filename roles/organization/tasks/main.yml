@@ -5,10 +5,10 @@
 
 - name: Crear organización en VMware Cloud Director vía REST
   ansible.builtin.uri:
-    url: "{{ vcd_host }}/cloudapi/1.0.0/orgs"
+    url: "{{ vcd_hostname }}/cloudapi/1.0.0/orgs"
     method: POST
     headers:
-      x-vcloud-authorization: "{{ vcd_token }}"
+      x-vcloud-authorization: "{{ vcd_access_token }}"
       Accept: "application/json"
       Content-Type: "application/json"
     body_format: json
@@ -30,10 +30,10 @@
 - name: Agregar metadata TrialMode si trial=true
   when: trial | bool
   ansible.builtin.uri:
-    url: "{{ vcd_host }}/api/org/{{ orgFullName }}/metadata"
+    url: "{{ vcd_hostname }}/api/org/{{ orgFullName }}/metadata"
     method: POST
     headers:
-      x-vcloud-authorization: "{{ vcd_token }}"
+      x-vcloud-authorization: "{{ vcd_access_token }}"
       Accept: "application/*+json;version={{ vcd_api_version }}"
       Content-Type: "application/vnd.vmware.vcloud.metadata+xml"
     body: |
@@ -58,10 +58,10 @@
 - name: Eliminar organización si cleanup=true
   when: cleanup | default(false) | bool
   ansible.builtin.uri:
-    url: "{{ vcd_host }}/cloudapi/1.0.0/orgs/{{ orgFullName }}"
+    url: "{{ vcd_hostname }}/cloudapi/1.0.0/orgs/{{ orgFullName }}"
     method: DELETE
     headers:
-      x-vcloud-authorization: "{{ vcd_token }}"
+      x-vcloud-authorization: "{{ vcd_access_token }}"
       Accept: "application/json"
     status_code: [202, 204, 404]
     validate_certs: "{{ vcd_verify_ssl_certs | default(false) }}"

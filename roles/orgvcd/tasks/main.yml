@@ -4,11 +4,11 @@
 # ===========================================================
 - name: Verificar si el Org VDC ya existe en VMware Cloud Director
   uri:
-    url: "{{ vcd_host }}/api/query?type=orgVdc&filter=name=={{ orgVdcName }}"
+    url: "{{ vcd_hostname }}/api/query?type=orgVdc&filter=name=={{ orgVdcName }}"
     method: GET
     headers:
       Accept: "application/*+json;version={{ vcd_api_version }}"
-      Authorization: "Bearer {{ vcd_token }}"
+      Authorization: "Bearer {{ vcd_access_token }}"
     return_content: yes
   register: vdc_check
   delegate_to: localhost
@@ -28,11 +28,11 @@
 - name: Crear Org VDC en VMware Cloud Director vía REST
   when: not vdc_exists
   uri:
-    url: "{{ vcd_host }}/api/orgVdc"
+    url: "{{ vcd_hostname }}/api/orgVdc"
     method: POST
     headers:
       Accept: "application/*+json;version={{ vcd_api_version }}"
-      Authorization: "Bearer {{ vcd_token }}"
+      Authorization: "Bearer {{ vcd_access_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
@@ -67,11 +67,11 @@
 # ===========================================================
 - name: Asignar metadata TrialMode al Org VDC
   uri:
-    url: "{{ vcd_host }}/api/vdc/{{ orgVdcName }}/metadata"
+    url: "{{ vcd_hostname }}/api/vdc/{{ orgVdcName }}/metadata"
     method: PUT
     headers:
       Accept: "application/*+json;version={{ vcd_api_version }}"
-      Authorization: "Bearer {{ vcd_token }}"
+      Authorization: "Bearer {{ vcd_access_token }}"
       Content-Type: "application/json"
     body_format: json
     body:

@@ -21,11 +21,11 @@
 # ===========================================================
 - name: Validar si el Edge Gateway ya existe
   ansible.builtin.uri:
-    url: "{{ vcd_host }}/api/query?type=edgeGateway&filter=name=={{ edgeGatewayName }}"
+    url: "{{ vcd_hostname }}/api/query?type=edgeGateway&filter=name=={{ edgeGatewayName }}"
     method: GET
     headers:
       Accept: "application/*+json;version={{ vcd_api_version }}"
-      Authorization: "Bearer {{ vcd_token }}"
+      Authorization: "Bearer {{ vcd_access_token }}"
     return_content: yes
   register: edge_check
   delegate_to: localhost
@@ -45,11 +45,11 @@
 - name: Crear Edge Gateway en VMware Cloud Director vía REST
   when: not edge_exists
   ansible.builtin.uri:
-    url: "{{ vcd_host }}/api/orgVdc/{{ orgVdcName }}/edgeGateways"
+    url: "{{ vcd_hostname }}/api/orgVdc/{{ orgVdcName }}/edgeGateways"
     method: POST
     headers:
       Accept: "application/*+json;version={{ vcd_api_version }}"
-      Authorization: "Bearer {{ vcd_token }}"
+      Authorization: "Bearer {{ vcd_access_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
@@ -84,11 +84,11 @@
 # ===========================================================
 - name: Asignar metadata TrialMode al Edge Gateway
   ansible.builtin.uri:
-    url: "{{ vcd_host }}/api/edgeGateway/{{ edgeGatewayName }}/metadata"
+    url: "{{ vcd_hostname }}/api/edgeGateway/{{ edgeGatewayName }}/metadata"
     method: PUT
     headers:
       Accept: "application/*+json;version={{ vcd_api_version }}"
-      Authorization: "Bearer {{ vcd_token }}"
+      Authorization: "Bearer {{ vcd_access_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
