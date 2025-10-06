@@ -1,66 +1,88 @@
 ---
-# Crear un VDC en VMware Cloud Director
-- name: Crear Org VDC
-  vcd_org_vdc:
-    user: "{{ vcd_username }}"
-    password: "{{ vcd_password }}"
-    host: "{{ vcd_hostname }}"
-    org: "System"
-    api_version: "39.1"
-    verify_ssl_certs: false
-    org_name: "{{ org_name }}"
-    name: "{{ vdc_name }}"
-    provider_vdc: "{{ provider_vdc }}"
-    allocation_model: "ReservationPool"
-    storage_profiles:
-      - name: "{{ storage_profile }}"
-    state: present
+# ===========================================================
+# VALIDAR SI EL ORG VDC YA EXISTE
+# ===========================================================
+- name: Verificar si el Org VDC ya existe en VMware Cloud Director
+  uri:
+    url: "{{ vcd_host }}/api/query?type=orgVdc&filter=name=={{ orgVdcName }}"
+    method: GET
+    headers:
+      Accept: "application/*+json;version={{ vcd_api_version }}"
+      Authorization: "Bearer {{ vcd_token }}"
+    return_content: yes
+  register: vdc_check
   delegate_to: localhost
+  failed_when: vdc_check.status not in [200, 201]
 
-# Añadir política de colocación
-- name: Añadir Placement Policy
-  vcd_org_vdc:
-    user: "{{ vcd_username }}"
-    password: "{{ vcd_password }}"
-    host: "{{ vcd_hostname }}"
-    org: "System"
-    api_version: "39.1"
-    verify_ssl_certs: false
-    org_name: "{{ org_name }}"
-    name: "{{ vdc_name }}"
-    placement_policy: "{{ placement_policy }}"
-    state: update
+- name: Determinar si el Org VDC ya existe
+  set_fact:
+    vdc_exists: "{{ (vdc_check.json.record is defined) and (vdc_check.json.record | length > 0) }}"
+
+- name: Mostrar estado del VDC
+  debug:
+    msg: "💡 Org VDC '{{ orgVdcName }}' {{ 'ya existe' if vdc_exists else 'no existe, se procederá a crear' }}."
+
+# ===========================================================
+# CREAR EL ORG VDC (SI NO EXISTE)
+# ===========================================================
+- name: Crear Org VDC en VMware Cloud Director vía REST
+  when: not vdc_exists
+  uri:
+    url: "{{ vcd_host }}/api/orgVdc"
+    method: POST
+    headers:
+      Accept: "application/*+json;version={{ vcd_api_version }}"
+      Authorization: "Bearer {{ vcd_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "{{ orgVdcName }}"
+      org: "{{ orgFullName }}"
+      providerVdcName: "{{ providerVdc | default('ProviderVDC-Default') }}"
+      allocationModel: "ReservationPool"
+      computeCapacity:
+        cpu:
+          allocated: "{{ cpuQuota | int }}"
+          limit: "{{ cpuQuota | int }}"
+        memory:
+          allocated: "{{ memoryQuota | int }}"
+          limit: "{{ memoryQuota | int }}"
+      storageProfiles:
+        - name: "{{ storageProfile | default('Standard') }}"
+          limit: "{{ storageQuota | int }}"
+      isEnabled: true
+      networkPoolName: "{{ networkPool | default('Default-NetworkPool') }}"
+      usesFastProvisioning: true
+  register: vdc_create
   delegate_to: localhost
+  failed_when: vdc_create.status not in [200, 201, 202]
 
-# Añadir política de dimensionamiento
-- name: Añadir Sizing Policy
-  vcd_org_vdc:
-    user: "{{ vcd_username }}"
-    password: "{{ vcd_password }}"
-    host: "{{ vcd_hostname }}"
-    org: "System"
-    api_version: "39.1"
-    verify_ssl_certs: false
+- name: Confirmar creación del Org VDC
+  when: not vdc_exists
+  debug:
+    msg: "✅ Org VDC '{{ orgVdcName }}' creado exitosamente."
 
-    org_name: "{{ org_name }}"
-    name: "{{ vdc_name }}"
-    sizing_policy: "{{ sizing_policy }}"
-    state: update
+# ===========================================================
+# AGREGAR / ACTUALIZAR METADATA (TRIALMODE)
+# ===========================================================
+- name: Asignar metadata TrialMode al Org VDC
+  uri:
+    url: "{{ vcd_host }}/api/vdc/{{ orgVdcName }}/metadata"
+    method: PUT
+    headers:
+      Accept: "application/*+json;version={{ vcd_api_version }}"
+      Authorization: "Bearer {{ vcd_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      metadata:
+        - key: "TrialMode"
+          value: "{{ 'true' if trial else 'false' }}"
+          type: "STRING"
+  register: metadata_update
   delegate_to: localhost
+  failed_when: metadata_update.status not in [200, 201, 202]
 
-# Metadata Trial Mode
-- name: Asignar metadata Trial Mode
-  vcd_metadata:
-    user: "{{ vcd_username }}"
-    password: "{{ vcd_password }}"
-    host: "{{ vcd_hostname }}"
-    org: "{{ org_name }}"
-    api_version: "39.1"
-    verify_ssl_certs: false
-    target_type: "vdc"
-    target_name: "{{ vdc_name }}"
-    key: "TrialMode"
-    value: "true"
-    type: "STRING"
-    state: present
-  delegate_to: localhost
+- name: Confirmar metadata aplicada
+  debug:
+    msg: "🟢 Metadata 'TrialMode={{ 'true' if trial else 'false' }}' aplicada correctamente al Org VDC '{{ orgVdcName }}'."

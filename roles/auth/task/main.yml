@@ -1,11 +1,24 @@
 ---
-- name: Authenticate to VMware Cloud Director
-  vars:
-    provider: "system"
-  block:
-    - name: Get VCD auth token
-      ansible.builtin.set_fact:
-        vcd_token: "{{ lookup('pipe', 'python3 -c \"from pyvcloud.vcd.client import BasicLoginCredentials, Client; import os; c = Client(os.getenv(\\'VCD_HOST\\'), verify_ssl_certs=False, api_version=os.getenv(\\'VCD_API_VERSION\\')); c.set_credentials(BasicLoginCredentials(os.getenv(\\'VCD_USER\\'), os.getenv(\\'VCD_ORG\\'), os.getenv(\\'VCD_PASSWORD\\'))); print(c._session.headers[\\'x-vcloud-authorization\\'])\"') }}"
-  rescue:
-    - fail:
-        msg: "❌ Error obteniendo token de autenticación con VCD"
+# =======================================
+# Autenticación directa a VCD (sin pyvcloud)
+# =======================================
+
+- name: Obtener token OAuth desde VCD
+  ansible.builtin.uri:
+    url: "{{ vcd_hostname }}/oauth/provider/token"
+    method: POST
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+    body: "grant_type=refresh_token&refresh_token={{ vcd_apikey }}"
+    body_format: form-urlencoded
+    return_content: yes
+    validate_certs: false
+  register: vcd_auth_response
+
+- name: Guardar token JWT
+  ansible.builtin.set_fact:
+    vcd_access_token: "{{ vcd_auth_response.json.access_token }}"
+
+- name: Validar autenticación exitosa
+  ansible.builtin.debug:
+    msg: "✅ Token obtenido correctamente para VCD: {{ vcd_access_token[:20] }}..."

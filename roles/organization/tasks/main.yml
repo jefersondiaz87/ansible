@@ -1,51 +1,72 @@
 ---
 # ===============================
-# CREAR / ELIMINAR ORGANIZACIÓN
+# CREAR / ELIMINAR ORGANIZACIÓN (REST)
 # ===============================
-- name: Crear organización en VMware Cloud Director
-  vcd_org:
-    user: "{{ vcd_username }}"
-    password: "{{ vcd_password }}"
-    host: "{{ vcd_hostname }}"
-    org: "System"
-    api_version: "{{ vcd_api_version }}"
-    verify_ssl_certs: false
-    name: "{{ org_name }}"
-    full_name: "{{ org_full_name }}"
-    is_enabled: true
-    state: present
-  delegate_to: localhost
+
+- name: Crear organización en VMware Cloud Director vía REST
+  ansible.builtin.uri:
+    url: "{{ vcd_host }}/cloudapi/1.0.0/orgs"
+    method: POST
+    headers:
+      x-vcloud-authorization: "{{ vcd_token }}"
+      Accept: "application/json"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "{{ orgFullName }}"
+      displayName: "{{ orgFullName }}"
+      isEnabled: true
+    status_code: [201, 200]
+    validate_certs: "{{ vcd_verify_ssl_certs | default(false) }}"
+  register: org_create
+
+- debug:
+    msg: "✅ Organización creada: {{ org_create.json.name }}"
 
 # =======================================
 # AGREGAR METADATA A LA ORGANIZACIÓN
 # =======================================
-- name: Agregar metadata de tipo Trial a la organización
-  vcd_metadata:
-    host: "{{ vcd_hostname }}"
-    user: "{{ vcd_username }}"
-    password: "{{ vcd_password }}"
-    org: "System"
-    api_version: "{{ vcd_api_version }}"
-    verify_ssl_certs: false
-    target_type: "org"
-    target_name: "{{ org_name }}"
-    key: "TrialMode"
-    value: "true"
-    type: "STRING"
-    state: present
-  delegate_to: localhost
+
+- name: Agregar metadata TrialMode si trial=true
+  when: trial | bool
+  ansible.builtin.uri:
+    url: "{{ vcd_host }}/api/org/{{ orgFullName }}/metadata"
+    method: POST
+    headers:
+      x-vcloud-authorization: "{{ vcd_token }}"
+      Accept: "application/*+json;version={{ vcd_api_version }}"
+      Content-Type: "application/vnd.vmware.vcloud.metadata+xml"
+    body: |
+      <Metadata xmlns="http://www.vmware.com/vcloud/v1.5" type="application/vnd.vmware.vcloud.metadata+xml">
+        <MetadataEntry>
+          <Key>TrialMode</Key>
+          <Value>true</Value>
+          <Type>STRING</Type>
+        </MetadataEntry>
+      </Metadata>
+    status_code: [200, 201]
+    validate_certs: "{{ vcd_verify_ssl_certs | default(false) }}"
+  register: metadata_set
+
+- debug:
+    msg: "🏷️ Metadata TrialMode agregada a {{ orgFullName }}"
+  when: trial | bool
 
 # =======================================
 # (Opcional) ELIMINAR ORGANIZACIÓN
 # =======================================
-- name: Eliminar organización (si se requiere cleanup)
-  vcd_org:
-    user: "{{ vcd_username }}"
-    password: "{{ vcd_password }}"
-    host: "{{ vcd_hostname }}"
-    org: "System"
-    api_version: "{{ vcd_api_version }}"
-    verify_ssl_certs: false
-    name: "{{ org_name }}"
-    state: absent
-  delegate_to: localhost
+- name: Eliminar organización si cleanup=true
+  when: cleanup | default(false) | bool
+  ansible.builtin.uri:
+    url: "{{ vcd_host }}/cloudapi/1.0.0/orgs/{{ orgFullName }}"
+    method: DELETE
+    headers:
+      x-vcloud-authorization: "{{ vcd_token }}"
+      Accept: "application/json"
+    status_code: [202, 204, 404]
+    validate_certs: "{{ vcd_verify_ssl_certs | default(false) }}"
+  register: org_delete
+
+- debug:
+    msg: "🗑️ Organización {{ orgFullName }} eliminada (cleanup activado)"
+  when: cleanup | default(false) | bool
