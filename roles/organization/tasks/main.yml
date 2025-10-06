@@ -13,7 +13,7 @@
     body_format: json
     body:
       name: "{{ vcd.orgFullName }}"
-      displayName: "{{ vcd.orgFullName }}"
+      fullName: "{{ vcd.orgFullName }}"
       description: "Organización creada vía API"
       settings:
         loginBanner: "Bienvenido a {{ vcd.orgFullName }}"
@@ -23,6 +23,7 @@
         email: "{{ vcd.mail }}"
         role: "organizationAdmin"
         enabled: true
+
     status_code: [201, 409] # 409 = ya existe
     validate_certs: "{{ vcd.verify_ssl | default(false) }}"
   register: org_create
