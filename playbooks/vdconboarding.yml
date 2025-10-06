@@ -12,7 +12,7 @@
     vcd_password: "{{ lookup('env', 'VCD_PASSWORD') }}"
     vcd_verify_ssl_certs: "{{ lookup('env', 'VCD_VERIFY_SSL_CERTS') | default(false) }}"
     vcd_api_version: "{{ lookup('env', 'VCD_API_VERSION') | default('39.1') }}"
-    vcd_apikey: "{{ lookup('env', 'VCD_APIKEY') }}" # Asegúrate de tener este valor en credenciales
+    vcd_apikey: "{{ lookup('env', 'VCD_TOKEN') }}" # Asegúrate de tener este valor en credenciales
 
     # 📦 Datos dinámicos — enviados desde survey o extra_vars
     orgFullName: "{{ orgFullName }}"
