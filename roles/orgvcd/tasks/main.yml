@@ -1,14 +1,13 @@
 ---
 # Crear un VDC en VMware Cloud Director
 - name: Crear Org VDC
-  vcd_vdc:
+  vcd_org_vdc:
     user: "{{ vcd_username }}"
     password: "{{ vcd_password }}"
     host: "{{ vcd_hostname }}"
     org: "System"
     api_version: "39.1"
     verify_ssl_certs: false
-
     org_name: "{{ org_name }}"
     name: "{{ vdc_name }}"
     provider_vdc: "{{ provider_vdc }}"
@@ -20,14 +19,13 @@
 
 # Añadir política de colocación
 - name: Añadir Placement Policy
-  vcd_vdc:
+  vcd_org_vdc:
     user: "{{ vcd_username }}"
     password: "{{ vcd_password }}"
     host: "{{ vcd_hostname }}"
     org: "System"
     api_version: "39.1"
     verify_ssl_certs: false
-
     org_name: "{{ org_name }}"
     name: "{{ vdc_name }}"
     placement_policy: "{{ placement_policy }}"
@@ -36,7 +34,7 @@
 
 # Añadir política de dimensionamiento
 - name: Añadir Sizing Policy
-  vcd_vdc:
+  vcd_org_vdc:
     user: "{{ vcd_username }}"
     password: "{{ vcd_password }}"
     host: "{{ vcd_hostname }}"
@@ -59,7 +57,6 @@
     org: "{{ org_name }}"
     api_version: "39.1"
     verify_ssl_certs: false
-
     target_type: "vdc"
     target_name: "{{ vdc_name }}"
     key: "TrialMode"

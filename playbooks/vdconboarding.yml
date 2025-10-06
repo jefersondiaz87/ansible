@@ -26,8 +26,9 @@
     trial: "{{ trial | default(false) }}"
 
   roles:
+    - role: auth
     - role: organization
     - role: orgvcd
     - role: network
-    - role: usermanagement
-    - role: email
+#    - role: usermanagement
+#    - role: email

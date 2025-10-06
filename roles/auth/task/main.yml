@@ -1,0 +1,11 @@
+---
+- name: Authenticate to VMware Cloud Director
+  vars:
+    provider: "system"
+  block:
+    - name: Get VCD auth token
+      ansible.builtin.set_fact:
+        vcd_token: "{{ lookup('pipe', 'python3 -c \"from pyvcloud.vcd.client import BasicLoginCredentials, Client; import os; c = Client(os.getenv(\\'VCD_HOST\\'), verify_ssl_certs=False, api_version=os.getenv(\\'VCD_API_VERSION\\')); c.set_credentials(BasicLoginCredentials(os.getenv(\\'VCD_USER\\'), os.getenv(\\'VCD_ORG\\'), os.getenv(\\'VCD_PASSWORD\\'))); print(c._session.headers[\\'x-vcloud-authorization\\'])\"') }}"
+  rescue:
+    - fail:
+        msg: "❌ Error obteniendo token de autenticación con VCD"

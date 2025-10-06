@@ -1,30 +1,51 @@
 ---
-# Crear una organización en VMware Cloud Director
+# ===============================
+# CREAR / ELIMINAR ORGANIZACIÓN
+# ===============================
 - name: Crear organización en VMware Cloud Director
   vcd_org:
     user: "{{ vcd_username }}"
     password: "{{ vcd_password }}"
     host: "{{ vcd_hostname }}"
-    org: "System" # El org "System" tiene permisos para crear organizaciones
-    api_version: "39.1"
+    org: "System"
+    api_version: "{{ vcd_api_version }}"
     verify_ssl_certs: false
-
     name: "{{ org_name }}"
     full_name: "{{ org_full_name }}"
     is_enabled: true
     state: present
   delegate_to: localhost
 
-# Eliminar una organización (si se requiere cleanup)
-- name: Eliminar organización
+# =======================================
+# AGREGAR METADATA A LA ORGANIZACIÓN
+# =======================================
+- name: Agregar metadata de tipo Trial a la organización
+  vcd_metadata:
+    host: "{{ vcd_hostname }}"
+    user: "{{ vcd_username }}"
+    password: "{{ vcd_password }}"
+    org: "System"
+    api_version: "{{ vcd_api_version }}"
+    verify_ssl_certs: false
+    target_type: "org"
+    target_name: "{{ org_name }}"
+    key: "TrialMode"
+    value: "true"
+    type: "STRING"
+    state: present
+  delegate_to: localhost
+
+# =======================================
+# (Opcional) ELIMINAR ORGANIZACIÓN
+# =======================================
+- name: Eliminar organización (si se requiere cleanup)
   vcd_org:
     user: "{{ vcd_username }}"
     password: "{{ vcd_password }}"
     host: "{{ vcd_hostname }}"
     org: "System"
-    api_version: "39.1"
+    api_version: "{{ vcd_api_version }}"
     verify_ssl_certs: false
-
     name: "{{ org_name }}"
     state: absent
   delegate_to: localhost
