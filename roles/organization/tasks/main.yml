@@ -29,7 +29,7 @@
 - name: Agregar metadata TrialMode si trial=true
   when: trial | bool
   ansible.builtin.uri:
-    url: "{{ vcd.hostname }}/api/org/{{ vcd.orgFullName }}/metadata"
+    url: "{{ vcd.host}}/api/org/{{ vcd.orgFullName }}/metadata"
     method: POST
     headers:
       x-vcloud-authorization: "{{ vcd.access_token }}"
@@ -57,7 +57,7 @@
 - name: Eliminar organización si cleanup=true
   when: cleanup | default(false) | bool
   ansible.builtin.uri:
-    url: "{{ vcd.hostname }}/cloudapi/1.0.0/orgs/{{ vcd.orgFullName }}"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs/{{ vcd.orgFullName }}"
     method: DELETE
     headers:
       x-vcloud-authorization: "{{ vcd.access_token }}"

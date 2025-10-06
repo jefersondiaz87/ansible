@@ -4,7 +4,7 @@
 # ===========================================================
 - name: Verificar si el Org VDC ya existe en VMware Cloud Director
   uri:
-    url: "{{ vcd.hostname }}/api/query?type=orgVdc&filter=name=={{ vcd.orgVdcName }}"
+    url: "{{ vcd.host }}/api/query?type=orgVdc&filter=name=={{ vcd.orgVdcName }}"
     method: GET
     headers:
       Accept: "application/*+json;version={{ vcd.api_version }}"
@@ -28,7 +28,7 @@
 - name: Crear Org VDC en VMware Cloud Director vía REST
   when: not vdc_exists
   uri:
-    url: "{{ vcd.hostname }}/api/orgVdc"
+    url: "{{ vcd.host }}/api/orgVdc"
     method: POST
     headers:
       Accept: "application/*+json;version={{ vcd.api_version }}"
@@ -67,7 +67,7 @@
 # ===========================================================
 - name: Asignar metadata TrialMode al Org VDC
   uri:
-    url: "{{ vcd.hostname }}/api/vdc/{{ vcd.orgVdcName }}/metadata"
+    url: "{{ vcd.host }}/api/vdc/{{ vcd.orgVdcName }}/metadata"
     method: PUT
     headers:
       Accept: "application/*+json;version={{ vcd.api_version }}"
