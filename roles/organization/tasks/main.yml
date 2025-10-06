@@ -2,112 +2,97 @@
 # ============================================
 # PLAYBOOK: CREAR / ELIMINAR ORG Y AGREGAR METADATA
 # ============================================
+# =======================================
+# 1️⃣ VERIFICAR SI LA ORGANIZACIÓN YA EXISTE
+# =======================================
+- name: Obtener lista de organizaciones
+  ansible.builtin.uri:
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs"
+    method: GET
+    headers:
+      x-vcloud-authorization: "{{ vcd.access_token }}"
+      Accept: "application/json;version={{ vcd.api_version }}"
+    validate_certs: "{{ vcd.verify_ssl | default(false) }}"
+  register: org_list
 
-- name: Gestionar organización en VMware Cloud Director
-  hosts: localhost
-  gather_facts: no
-  vars:
-    # Ejemplo de variables (pueden provenir de AWX credentials)
-    # vcd.host: "https://vcd.example.com"
-    # vcd.access_token: "{{ lookup('env','VCD_ACCESS_TOKEN') }}"
-    # vcd.api_version: "39.1"
-    # vcd.orgFullName: "US1001735"
-    # trial: true
-    # cleanup: false
-    # vcd.verify_ssl_certs: false
+- name: Determinar si la organización ya existe
+  set_fact:
+    org_exists: "{{ org_list.json.value | selectattr('name','equalto', vcd.orgFullName) | list | length > 0 }}"
 
-  tasks:
-    # =======================================
-    # 1️⃣ VERIFICAR SI LA ORGANIZACIÓN YA EXISTE
-    # =======================================
-    - name: Obtener lista de organizaciones
-      ansible.builtin.uri:
-        url: "{{ vcd.host }}/cloudapi/1.0.0/orgs"
-        method: GET
-        headers:
-          x-vcloud-authorization: "{{ vcd.access_token }}"
-          Accept: "application/json;version={{ vcd.api_version }}"
-        validate_certs: "{{ vcd.verify_ssl | default(false) }}"
-      register: org_list
+# =======================================
+# 2️⃣ CREAR ORGANIZACIÓN SI NO EXISTE
+# =======================================
+- name: Crear organización en VMware Cloud Director vía REST
+  ansible.builtin.uri:
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs"
+    method: POST
+    headers:
+      x-vcloud-authorization: "{{ vcd.access_token }}"
+      Accept: "application/json;version={{ vcd.api_version }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      displayName: "{{ vcd.orgFullName }}"
+      name: "{{ vcd.orgFullName }}"
+    status_code: [201, 200]
+    validate_certs: "{{ vcd.verify_ssl | default(false) }}"
+  register: org_create
+  when: not org_exists
 
-    - name: Determinar si la organización ya existe
-      set_fact:
-        org_exists: "{{ org_list.json.value | selectattr('name','equalto', vcd.orgFullName) | list | length > 0 }}"
+- name: Mostrar resultado de la creación
+  debug:
+    msg: >
+      {% if org_exists %}
+        ⚠️ La organización '{{ vcd.orgFullName }}' ya existe
+      {% else %}
+        ✅ Organización creada: {{ org_create.json.name }}
+      {% endif %}
 
-    # =======================================
-    # 2️⃣ CREAR ORGANIZACIÓN SI NO EXISTE
-    # =======================================
-    - name: Crear organización en VMware Cloud Director vía REST
-      ansible.builtin.uri:
-        url: "{{ vcd.host }}/cloudapi/1.0.0/orgs"
-        method: POST
-        headers:
-          x-vcloud-authorization: "{{ vcd.access_token }}"
-          Accept: "application/json;version={{ vcd.api_version }}"
-          Content-Type: "application/json"
-        body_format: json
-        body:
-          displayName: "{{ vcd.orgFullName }}"
-          name: "{{ vcd.orgFullName }}"
-        status_code: [201, 200]
-        validate_certs: "{{ vcd.verify_ssl | default(false) }}"
-      register: org_create
-      when: not org_exists
+# =======================================
+# 3️⃣ AGREGAR METADATA TRIALMODE
+# =======================================
+- name: Agregar metadata TrialMode si trial=true
+  ansible.builtin.uri:
+    url: "{{ vcd.host }}/api/org/{{ vcd.orgFullName }}/metadata"
+    method: POST
+    headers:
+      x-vcloud-authorization: "{{ vcd.access_token }}"
+      Accept: "application/*+json;version={{ vcd.api_version }}"
+      Content-Type: "application/vnd.vmware.vcloud.metadata+xml"
+    body: |
+      <Metadata xmlns="http://www.vmware.com/vcloud/v1.5" type="application/vnd.vmware.vcloud.metadata+xml">
+        <MetadataEntry>
+          <Key>TrialMode</Key>
+          <Value>true</Value>
+          <Type>STRING</Type>
+        </MetadataEntry>
+      </Metadata>
+    status_code: [200, 201]
+    validate_certs: "{{ vcd.verify_ssl | default(false) }}"
+  register: metadata_set
+  when: trial | bool
 
-    - name: Mostrar resultado de la creación
-      debug:
-        msg: >
-          {% if org_exists %}
-            ⚠️ La organización '{{ vcd.orgFullName }}' ya existe
-          {% else %}
-            ✅ Organización creada: {{ org_create.json.name }}
-          {% endif %}
+- name: Mostrar metadata agregada
+  debug:
+    msg: "🏷️ Metadata TrialMode agregada a {{ vcd.orgFullName }}"
+  when: trial | bool
 
-    # =======================================
-    # 3️⃣ AGREGAR METADATA TRIALMODE
-    # =======================================
-    - name: Agregar metadata TrialMode si trial=true
-      ansible.builtin.uri:
-        url: "{{ vcd.host }}/api/org/{{ vcd.orgFullName }}/metadata"
-        method: POST
-        headers:
-          x-vcloud-authorization: "{{ vcd.access_token }}"
-          Accept: "application/*+json;version={{ vcd.api_version }}"
-          Content-Type: "application/vnd.vmware.vcloud.metadata+xml"
-        body: |
-          <Metadata xmlns="http://www.vmware.com/vcloud/v1.5" type="application/vnd.vmware.vcloud.metadata+xml">
-            <MetadataEntry>
-              <Key>TrialMode</Key>
-              <Value>true</Value>
-              <Type>STRING</Type>
-            </MetadataEntry>
-          </Metadata>
-        status_code: [200, 201]
-        validate_certs: "{{ vcd.verify_ssl | default(false) }}"
-      register: metadata_set
-      when: trial | bool
+# =======================================
+# 4️⃣ ELIMINAR ORGANIZACIÓN SI cleanup=true
+# =======================================
+- name: Eliminar organización si cleanup=true
+  ansible.builtin.uri:
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs/{{ vcd.orgFullName }}"
+    method: DELETE
+    headers:
+      x-vcloud-authorization: "{{ vcd.access_token }}"
+      Accept: "application/json"
+    status_code: [202, 204, 404]
+    validate_certs: "{{ vcd.verify_ssl | default(false) }}"
+  register: org_delete
+  when: cleanup | default(false) | bool
 
-    - name: Mostrar metadata agregada
-      debug:
-        msg: "🏷️ Metadata TrialMode agregada a {{ vcd.orgFullName }}"
-      when: trial | bool
-
-    # =======================================
-    # 4️⃣ ELIMINAR ORGANIZACIÓN SI cleanup=true
-    # =======================================
-    - name: Eliminar organización si cleanup=true
-      ansible.builtin.uri:
-        url: "{{ vcd.host }}/cloudapi/1.0.0/orgs/{{ vcd.orgFullName }}"
-        method: DELETE
-        headers:
-          x-vcloud-authorization: "{{ vcd.access_token }}"
-          Accept: "application/json"
-        status_code: [202, 204, 404]
-        validate_certs: "{{ vcd.verify_ssl | default(false) }}"
-      register: org_delete
-      when: cleanup | default(false) | bool
-
-    - name: Mostrar resultado de eliminación
-      debug:
-        msg: "🗑️ Organización {{ vcd.orgFullName }} eliminada (cleanup activado)"
-      when: cleanup | default(false) | bool
+- name: Mostrar resultado de eliminación
+  debug:
+    msg: "🗑️ Organización {{ vcd.orgFullName }} eliminada (cleanup activado)"
+  when: cleanup | default(false) | bool
