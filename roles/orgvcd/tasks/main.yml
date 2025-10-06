@@ -10,6 +10,7 @@
       Accept: "application/*+json;version={{ vcd.api_version }}"
       Authorization: "Bearer {{ vcd.access_token }}"
     return_content: yes
+    validate_certs: false
   register: vdc_check
   delegate_to: localhost
   failed_when: vdc_check.status not in [200, 201]
@@ -53,6 +54,7 @@
       isEnabled: true
       networkPoolName: "{{ networkPool | default('Default-NetworkPool') }}"
       usesFastProvisioning: true
+    validate_certs: false
   register: vdc_create
   delegate_to: localhost
   failed_when: vdc_create.status not in [200, 201, 202]
@@ -79,6 +81,7 @@
         - key: "TrialMode"
           value: "{{ 'true' if trial else 'false' }}"
           type: "STRING"
+    validate_certs: false
   register: metadata_update
   delegate_to: localhost
   failed_when: metadata_update.status not in [200, 201, 202]
