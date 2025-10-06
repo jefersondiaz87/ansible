@@ -13,7 +13,7 @@
     body_format: json
     body:
       name: "{{ vcd.orgFullName }}"
-      fullName: "{{ vcd.orgFullName }}"
+      displayName: "{{ vcd.orgFullName }}"
       description: "Organización creada vía API"
       settings:
         loginBanner: "Bienvenido a {{ vcd.orgFullName }}"
@@ -37,7 +37,7 @@
   debug:
     msg: >
       {% if org_exists %}
-        ⚠️ La organización '{{ vcd.orgFullName }}' ya existe
+        ⚠️ La organizacion '{{ vcd.orgFullName }}' ya existe
       {% else %}
-        ✅ Organización '{{ vcd.orgFullName }}' creada correctamente
+        ✅ Organizacion '{{ vcd.orgFullName }}' creada correctamente
       {% endif %}
