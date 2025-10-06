@@ -9,7 +9,7 @@
     method: POST
     headers:
       x-vcloud-authorization: "{{ vcd.access_token }}"
-      Accept: "application/json"
+      Accept: "application/json;version={{ vcd.api_version }}"
       Content-Type: "application/json"
     body_format: json
     body:
