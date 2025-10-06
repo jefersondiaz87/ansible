@@ -87,7 +87,7 @@
     url: "{{ vcd.host }}/api/edgeGateway/{{ edgeGatewayName }}/metadata"
     method: PUT
     headers:
-      Accept: "application/*+json;version={{ vcd.api_version }}"
+      Accept: "application/json;version={{ vcd.api_version }}"
       Authorization: "Bearer {{ vcd.access_token }}"
       Content-Type: "application/json"
     body_format: json
