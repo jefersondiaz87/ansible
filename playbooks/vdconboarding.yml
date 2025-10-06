@@ -53,6 +53,28 @@
     - name: Validar autenticación exitosa
       ansible.builtin.debug:
         msg: "✅ Token obtenido correctamente para VCD: {{ vcd_access_token[:20] }}..."
+    - name: Consolidar contexto VCD para roles
+      ansible.builtin.set_fact:
+        vcd_context:
+          host: "{{ vcd_hostname }}"
+          org: "{{ vcd_org }}"
+          user: "{{ vcd_user }}"
+          password: "{{ vcd_password }}"
+          verify_ssl: "{{ vcd_verify_ssl_certs }}"
+          api_version: "{{ vcd_api_version }}"
+          apikey: "{{ vcd_apikey }}"
+          access_token: "{{ vcd_access_token }}"
+          orgFullName: "{{ orgFullName }}"
+          orgVdcName: "{{ orgVdcName }}"
+          cpuQuota: "{{ cpuQuota }}"
+          memoryQuota: "{{ memoryQuota }}"
+          storageQuota: "{{ storageQuota }}"
+          mail: "{{ mail }}"
+          firstName: "{{ firstName }}"
+          lastName: "{{ lastName }}"
+          networkType: "{{ networkType }}"
+          trial: "{{ trial | default(false) }}"
+          cleanup: "{{ cleanup | default(false) }}"
 
     # =======================================
     # Ejecución de roles (ya con token disponible)
@@ -61,25 +83,7 @@
       include_role:
         name: "{{ item }}"
       vars:
-        vcd_hostname: "{{ vcd_hostname }}"
-        vcd_org: "{{ vcd_org }}"
-        vcd_user: "{{ vcd_user }}"
-        vcd_password: "{{ vcd_password }}"
-        vcd_verify_ssl_certs: "{{ vcd_verify_ssl_certs }}"
-        vcd_api_version: "{{ vcd_api_version }}"
-        vcd_apikey: "{{ vcd_apikey }}"
-        vcd_access_token: "{{ vcd_access_token }}"
-        orgFullName: "{{ orgFullName }}"
-        orgVdcName: "{{ orgVdcName }}"
-        cpuQuota: "{{ cpuQuota }}"
-        memoryQuota: "{{ memoryQuota }}"
-        storageQuota: "{{ storageQuota }}"
-        mail: "{{ mail }}"
-        firstName: "{{ firstName }}"
-        lastName: "{{ lastName }}"
-        networkType: "{{ networkType }}"
-        trial: "{{ trial | default(false) }}"
-
+        vcd: "{{ vcd_context }}"
       loop:
         - organization
         - orgvcd

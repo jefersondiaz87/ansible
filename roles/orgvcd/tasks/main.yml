@@ -4,11 +4,11 @@
 # ===========================================================
 - name: Verificar si el Org VDC ya existe en VMware Cloud Director
   uri:
-    url: "{{ vcd_hostname }}/api/query?type=orgVdc&filter=name=={{ orgVdcName }}"
+    url: "{{ vcd.hostname }}/api/query?type=orgVdc&filter=name=={{ vcd.orgVdcName }}"
     method: GET
     headers:
-      Accept: "application/*+json;version={{ vcd_api_version }}"
-      Authorization: "Bearer {{ vcd_access_token }}"
+      Accept: "application/*+json;version={{ vcd.api_version }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
     return_content: yes
   register: vdc_check
   delegate_to: localhost
@@ -20,7 +20,7 @@
 
 - name: Mostrar estado del VDC
   debug:
-    msg: "💡 Org VDC '{{ orgVdcName }}' {{ 'ya existe' if vdc_exists else 'no existe, se procederá a crear' }}."
+    msg: "💡 Org VDC '{{ vcd.orgVdcName }}' {{ 'ya existe' if vdc_exists else 'no existe, se procederá a crear' }}."
 
 # ===========================================================
 # CREAR EL ORG VDC (SI NO EXISTE)
@@ -28,28 +28,28 @@
 - name: Crear Org VDC en VMware Cloud Director vía REST
   when: not vdc_exists
   uri:
-    url: "{{ vcd_hostname }}/api/orgVdc"
+    url: "{{ vcd.hostname }}/api/orgVdc"
     method: POST
     headers:
-      Accept: "application/*+json;version={{ vcd_api_version }}"
-      Authorization: "Bearer {{ vcd_access_token }}"
+      Accept: "application/*+json;version={{ vcd.api_version }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
-      name: "{{ orgVdcName }}"
-      org: "{{ orgFullName }}"
+      name: "{{ vcd.orgVdcName }}"
+      org: "{{ vcd.orgFullName }}"
       providerVdcName: "{{ providerVdc | default('ProviderVDC-Default') }}"
       allocationModel: "ReservationPool"
       computeCapacity:
         cpu:
-          allocated: "{{ cpuQuota | int }}"
-          limit: "{{ cpuQuota | int }}"
+          allocated: "{{ vcd.cpuQuota | int }}"
+          limit: "{{ vcd.cpuQuota | int }}"
         memory:
-          allocated: "{{ memoryQuota | int }}"
-          limit: "{{ memoryQuota | int }}"
+          allocated: "{{ vcd.memoryQuota | int }}"
+          limit: "{{ vcd.memoryQuota | int }}"
       storageProfiles:
         - name: "{{ storageProfile | default('Standard') }}"
-          limit: "{{ storageQuota | int }}"
+          limit: "{{ vcd.storageQuota | int }}"
       isEnabled: true
       networkPoolName: "{{ networkPool | default('Default-NetworkPool') }}"
       usesFastProvisioning: true
@@ -60,18 +60,18 @@
 - name: Confirmar creación del Org VDC
   when: not vdc_exists
   debug:
-    msg: "✅ Org VDC '{{ orgVdcName }}' creado exitosamente."
+    msg: "✅ Org VDC '{{ vcd.orgVdcName }}' creado exitosamente."
 
 # ===========================================================
 # AGREGAR / ACTUALIZAR METADATA (TRIALMODE)
 # ===========================================================
 - name: Asignar metadata TrialMode al Org VDC
   uri:
-    url: "{{ vcd_hostname }}/api/vdc/{{ orgVdcName }}/metadata"
+    url: "{{ vcd.hostname }}/api/vdc/{{ vcd.orgVdcName }}/metadata"
     method: PUT
     headers:
-      Accept: "application/*+json;version={{ vcd_api_version }}"
-      Authorization: "Bearer {{ vcd_access_token }}"
+      Accept: "application/*+json;version={{ vcd.api_version }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
@@ -85,4 +85,4 @@
 
 - name: Confirmar metadata aplicada
   debug:
-    msg: "🟢 Metadata 'TrialMode={{ 'true' if trial else 'false' }}' aplicada correctamente al Org VDC '{{ orgVdcName }}'."
+    msg: "🟢 Metadata 'TrialMode={{ 'true' if trial else 'false' }}' aplicada correctamente al Org VDC '{{ vcd.orgVdcName }}'."

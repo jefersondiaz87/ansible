@@ -5,19 +5,19 @@
 
 - name: Crear organización en VMware Cloud Director vía REST
   ansible.builtin.uri:
-    url: "{{ vcd_hostname }}/cloudapi/1.0.0/orgs"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs"
     method: POST
     headers:
-      x-vcloud-authorization: "{{ vcd_access_token }}"
+      x-vcloud-authorization: "{{ vcd.access_token }}"
       Accept: "application/json"
       Content-Type: "application/json"
     body_format: json
     body:
-      name: "{{ orgFullName }}"
-      displayName: "{{ orgFullName }}"
+      name: "{{ vcd.orgFullName }}"
+      displayName: "{{ vcd.orgFullName }}"
       isEnabled: true
     status_code: [201, 200]
-    validate_certs: "{{ vcd_verify_ssl_certs | default(false) }}"
+    validate_certs: "{{ vcd.verify_ssl_certs | default(false) }}"
   register: org_create
 
 - debug:
@@ -30,11 +30,11 @@
 - name: Agregar metadata TrialMode si trial=true
   when: trial | bool
   ansible.builtin.uri:
-    url: "{{ vcd_hostname }}/api/org/{{ orgFullName }}/metadata"
+    url: "{{ vcd.hostname }}/api/org/{{ vcd.orgFullName }}/metadata"
     method: POST
     headers:
-      x-vcloud-authorization: "{{ vcd_access_token }}"
-      Accept: "application/*+json;version={{ vcd_api_version }}"
+      x-vcloud-authorization: "{{ vcd.access_token }}"
+      Accept: "application/*+json;version={{ vcd.api_version }}"
       Content-Type: "application/vnd.vmware.vcloud.metadata+xml"
     body: |
       <Metadata xmlns="http://www.vmware.com/vcloud/v1.5" type="application/vnd.vmware.vcloud.metadata+xml">
@@ -45,11 +45,11 @@
         </MetadataEntry>
       </Metadata>
     status_code: [200, 201]
-    validate_certs: "{{ vcd_verify_ssl_certs | default(false) }}"
+    validate_certs: "{{ vcd.verify_ssl | default(false) }}"
   register: metadata_set
 
 - debug:
-    msg: "🏷️ Metadata TrialMode agregada a {{ orgFullName }}"
+    msg: "🏷️ Metadata TrialMode agregada a {{ vcd.orgFullName }}"
   when: trial | bool
 
 # =======================================
@@ -58,15 +58,15 @@
 - name: Eliminar organización si cleanup=true
   when: cleanup | default(false) | bool
   ansible.builtin.uri:
-    url: "{{ vcd_hostname }}/cloudapi/1.0.0/orgs/{{ orgFullName }}"
+    url: "{{ vcd.hostname }}/cloudapi/1.0.0/orgs/{{ vcd.orgFullName }}"
     method: DELETE
     headers:
-      x-vcloud-authorization: "{{ vcd_access_token }}"
+      x-vcloud-authorization: "{{ vcd.access_token }}"
       Accept: "application/json"
     status_code: [202, 204, 404]
-    validate_certs: "{{ vcd_verify_ssl_certs | default(false) }}"
+    validate_certs: "{{ vcd.verify_ssl | default(false) }}"
   register: org_delete
 
 - debug:
-    msg: "🗑️ Organización {{ orgFullName }} eliminada (cleanup activado)"
+    msg: "🗑️ Organización {{ vcd.orgFullName }} eliminada (cleanup activado)"
   when: cleanup | default(false) | bool
