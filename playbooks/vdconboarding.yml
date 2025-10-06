@@ -12,6 +12,7 @@
     vcd_password: "{{ lookup('env', 'VCD_PASSWORD') }}"
     vcd_verify_ssl_certs: "{{ lookup('env', 'VCD_VERIFY_SSL_CERTS') | default(false) }}"
     vcd_api_version: "{{ lookup('env', 'VCD_API_VERSION') | default('39.1') }}"
+    vcd_apikey: "{{ lookup('env', 'VCD_APIKEY') }}" # Asegúrate de tener este valor en credenciales
 
     # 📦 Datos dinámicos — enviados desde survey o extra_vars
     orgFullName: "{{ orgFullName }}"
@@ -25,38 +26,41 @@
     networkType: "{{ networkType }}"
     trial: "{{ trial | default(false) }}"
 
-# =======================================
-# Autenticación directa a VCD (sin pyvcloud)
-# =======================================
+  tasks:
+    # =======================================
+    # Autenticación directa a VCD (sin pyvcloud)
+    # =======================================
+    - name: Obtener token OAuth desde VCD
+      ansible.builtin.uri:
+        url: "{{ vcd_hostname }}/oauth/provider/token"
+        method: POST
+        headers:
+          Content-Type: "application/x-www-form-urlencoded"
+        body: "grant_type=refresh_token&refresh_token={{ vcd_apikey }}"
+        body_format: form-urlencoded
+        return_content: yes
+        validate_certs: false
+      register: vcd_auth_response
 
-- name: Obtener token OAuth desde VCD
-  ansible.builtin.uri:
-    url: "{{ vcd_hostname }}/oauth/provider/token"
-    method: POST
-    headers:
-      Content-Type: "application/x-www-form-urlencoded"
-    body: "grant_type=refresh_token&refresh_token={{ vcd_apikey }}"
-    body_format: form-urlencoded
-    return_content: yes
-    validate_certs: false
-  register: vcd_auth_response
+    - name: Guardar token JWT
+      ansible.builtin.set_fact:
+        vcd_access_token: "{{ vcd_auth_response.json.access_token }}"
 
-- name: Guardar token JWT
-  ansible.builtin.set_fact:
-    vcd_access_token: "{{ vcd_auth_response.json.access_token }}"
+    - name: Mostrar token temporal (debug)
+      ansible.builtin.debug:
+        msg: "Token JWT generado: {{ vcd_access_token | default('NO DEFINIDO') }}"
 
-- name: Mostrar token temporal (debug)
-  debug:
-    msg: "Token JWT generado: {{ vcd_access_token | default('NO DEFINIDO') }}"
+    - name: Validar autenticación exitosa
+      ansible.builtin.debug:
+        msg: "✅ Token obtenido correctamente para VCD: {{ vcd_access_token[:20] }}..."
 
-- name: Validar autenticación exitosa
-  ansible.builtin.debug:
-    msg: "✅ Token obtenido correctamente para VCD: {{ vcd_access_token[:20] }}..."
-
-  roles:
-    - role: auth
-    - role: organization
-    - role: orgvcd
-    - role: network
-#    - role: usermanagement
-#    - role: email
+    # =======================================
+    # Ejecución de roles (ya con token disponible)
+    # =======================================
+    - name: Ejecutar roles de onboarding
+      include_role:
+        name: "{{ item }}"
+      loop:
+        - organization
+        - orgvcd
+        - network
