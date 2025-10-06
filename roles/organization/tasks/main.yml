@@ -27,7 +27,7 @@
         headers:
           x-vcloud-authorization: "{{ vcd.access_token }}"
           Accept: "application/json;version={{ vcd.api_version }}"
-        validate_certs: "{{ vcd.verify_ssl_certs | default(false) }}"
+        validate_certs: "{{ vcd.verify_ssl | default(false) }}"
       register: org_list
 
     - name: Determinar si la organización ya existe
@@ -50,7 +50,7 @@
           displayName: "{{ vcd.orgFullName }}"
           name: "{{ vcd.orgFullName }}"
         status_code: [201, 200]
-        validate_certs: "{{ vcd.verify_ssl_certs | default(false) }}"
+        validate_certs: "{{ vcd.verify_ssl | default(false) }}"
       register: org_create
       when: not org_exists
 
@@ -83,7 +83,7 @@
             </MetadataEntry>
           </Metadata>
         status_code: [200, 201]
-        validate_certs: "{{ vcd.verify_ssl_certs | default(false) }}"
+        validate_certs: "{{ vcd.verify_ssl | default(false) }}"
       register: metadata_set
       when: trial | bool
 
@@ -103,7 +103,7 @@
           x-vcloud-authorization: "{{ vcd.access_token }}"
           Accept: "application/json"
         status_code: [202, 204, 404]
-        validate_certs: "{{ vcd.verify_ssl_certs | default(false) }}"
+        validate_certs: "{{ vcd.verify_ssl | default(false) }}"
       register: org_delete
       when: cleanup | default(false) | bool
 
