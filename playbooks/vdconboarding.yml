@@ -45,6 +45,7 @@
     - name: Guardar token JWT
       ansible.builtin.set_fact:
         vcd_access_token: "{{ vcd_auth_response.json.access_token }}"
+      cacheable: true
 
     - name: Mostrar token temporal (debug)
       ansible.builtin.debug:
@@ -60,6 +61,26 @@
     - name: Ejecutar roles de onboarding
       include_role:
         name: "{{ item }}"
+      vars:
+        vcd_hostname: "{{ vcd_hostname }}"
+        vcd_org: "{{ vcd_org }}"
+        vcd_user: "{{ vcd_user }}"
+        vcd_password: "{{ vcd_password }}"
+        vcd_verify_ssl_certs: "{{ vcd_verify_ssl_certs }}"
+        vcd_api_version: "{{ vcd_api_version }}"
+        vcd_apikey: "{{ vcd_apikey }}"
+        vcd_access_token: "{{ vcd_access_token }}"
+        orgFullName: "{{ orgFullName }}"
+        orgVdcName: "{{ orgVdcName }}"
+        cpuQuota: "{{ cpuQuota }}"
+        memoryQuota: "{{ memoryQuota }}"
+        storageQuota: "{{ storageQuota }}"
+        mail: "{{ mail }}"
+        firstName: "{{ firstName }}"
+        lastName: "{{ lastName }}"
+        networkType: "{{ networkType }}"
+        trial: "{{ trial | default(false) }}"
+
       loop:
         - organization
         - orgvcd
