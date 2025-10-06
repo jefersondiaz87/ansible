@@ -15,8 +15,6 @@
       name: "{{ vcd.orgFullName }}"
       displayName: "{{ vcd.orgFullName }}"
       description: "Organización creada vía API"
-      settings:
-        loginBanner: "Bienvenido a {{ vcd.orgFullName }}"
       owner:
         userName: "admin_{{ vcd.orgFullName | lower | replace(' ', '_') }}"
         fullName: "{{ vcd.firstName }} {{ vcd.lastName }}"
