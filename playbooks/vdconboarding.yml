@@ -43,7 +43,7 @@
 
     - name: Guardar token JWT
       ansible.builtin.set_fact:
-        vcd_access_token: "{{ vcd_auth_response.headers['X-VMWARE-VCLOUD-ACCESS-TOKEN'] }}"
+        vcd_access_token: "{{ vcd_auth_response.x_vmware_vcloud_access_token }}"
 
     - name: Mostrar token temporal (debug)
       ansible.builtin.debug:
