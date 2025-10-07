@@ -7,7 +7,7 @@ def crear_org(host, user, password, org_name, full_name):
     if not host.endswith('/api'):
         host = host.rstrip('/') + '/api'
     client = Client(host, api_version='38.1', verify_ssl_certs=False)
-    client.set_credentials(BasicLoginCredentials(user, 'System', password))
+    client.set_credentials(BasicLoginCredentials(user, 'system', password))
     system = System(client)
     try:
         system.create_org(org_name, full_name, is_enabled=True)
