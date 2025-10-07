@@ -4,7 +4,7 @@
 # ===========================================================
 - name: Verificar si el Org VDC ya existe en VMware Cloud Director
   uri:
-    url: "{{ vcd.host }}/api/query?type=orgVdc&filter=name=={{ vcd.orgVdcName }}"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgVdcs?filter=name=={{ vcd.orgVdcName }}"
     method: GET
     headers:
       Accept: "application/*+json;version={{ vcd.api_version }}"
@@ -24,22 +24,25 @@
     msg: "💡 Org VDC '{{ vcd.orgVdcName }}' {{ 'ya existe' if vdc_exists else 'no existe, se procederá a crear' }}."
 
 # ===========================================================
-# CREAR EL ORG VDC (SI NO EXISTE)
+# CREAR ORG VDC (usando CloudAPI)
 # ===========================================================
-- name: Crear Org VDC en VMware Cloud Director vía REST
+
+- name: Crear Org VDC en VMware Cloud Director vía CloudAPI
   when: not vdc_exists
-  uri:
-    url: "{{ vcd.host }}/api/orgVdc"
+  ansible.builtin.uri:
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgVdcs"
     method: POST
     headers:
-      Accept: "application/json;version={{ vcd.api_version }}"
+      Accept: "application/json;version={{ vcd.api_version | default('39.0') }}"
       Authorization: "Bearer {{ vcd.access_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
       name: "{{ vcd.orgVdcName }}"
-      org: "{{ vcd.orgFullName }}"
-      providerVdcName: "{{ providerVdc | default('ProviderVDC-Default') }}"
+      organization:
+        name: "{{ vcd.orgFullName }}"
+      providerVdc:
+        name: "{{ providerVdc | default('ProviderVDC-Default') }}"
       allocationModel: "ReservationPool"
       computeCapacity:
         cpu:
@@ -51,8 +54,9 @@
       storageProfiles:
         - name: "{{ storageProfile | default('Standard') }}"
           limit: "{{ vcd.storageQuota | int }}"
+      networkPool:
+        name: "{{ networkPool | default('Default-NetworkPool') }}"
       isEnabled: true
-      networkPoolName: "{{ networkPool | default('Default-NetworkPool') }}"
       usesFastProvisioning: true
     validate_certs: false
   register: vdc_create
@@ -62,17 +66,18 @@
 - name: Confirmar creación del Org VDC
   when: not vdc_exists
   debug:
-    msg: "✅ Org VDC '{{ vcd.orgVdcName }}' creado exitosamente."
+    msg: "✅ Org VDC '{{ vcd.orgVdcName }}' creado exitosamente vía CloudAPI."
 
 # ===========================================================
-# AGREGAR / ACTUALIZAR METADATA (TRIALMODE)
+# AGREGAR / ACTUALIZAR METADATA (CloudAPI)
 # ===========================================================
+
 - name: Asignar metadata TrialMode al Org VDC
-  uri:
-    url: "{{ vcd.host }}/api/vdc/{{ vcd.orgVdcName }}/metadata"
+  ansible.builtin.uri:
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgVdcs/{{ vdc_create.json.id }}/metadata"
     method: PUT
     headers:
-      Accept: "application/*+json;version={{ vcd.api_version }}"
+      Accept: "application/json;version={{ vcd.api_version | default('39.0') }}"
       Authorization: "Bearer {{ vcd.access_token }}"
       Content-Type: "application/json"
     body_format: json

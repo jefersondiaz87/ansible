@@ -34,41 +34,4 @@
         ❌ Error al crear la organización: {{ org_create }}
       {% endif %}
 
-# Extrae el ID de la organización creada o existente
-- name: "🧩 Guardar ID de la organización creada"
-  set_fact:
-    org_id: "{{ (org_create.json.id | default('')) | regex_replace('^urn:vcloud:org:', '') }}"
-  when: org_create.json is defined
 
-- name: "✅ Crear usuario administrador en la organización"
-  when: org_create.status in [200, 201, 409]
-  ansible.builtin.uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs/{{ org_create.json.id }}/users"
-    method: POST
-    headers:
-      Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "Bearer {{ vcd.access_token }}"
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      name: "admin_{{ vcd.orgFullName | lower | replace(' ', '_') }}"
-      password: "{{ vcd.adminPassword }}"
-      description: "Usuario administrador de la organización"
-      role: "Organization Administrator"
-      email: "{{ vcd.mail }}"
-      enabled: true
-    status_code: [201, 409]
-    validate_certs: "{{ vcd.verify_ssl }}"
-  register: admin_create
-  ignore_errors: yes
-
-- name: "🔹 Mostrar resultado del usuario admin"
-  debug:
-    msg: >
-      {% if admin_create.status == 201 %}
-        ✅ Usuario administrador creado correctamente en '{{ vcd.orgFullName }}'.
-      {% elif admin_create.status == 409 %}
-        ⚠️ El usuario administrador ya existe en '{{ vcd.orgFullName }}'.
-      {% else %}
-        ❌ Error al crear usuario admin: {{ admin_create }}
-      {% endif %}
