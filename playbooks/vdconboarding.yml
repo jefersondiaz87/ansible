@@ -35,7 +35,7 @@
         url: "{{ vcd_hostname }}/cloudapi/1.0.0/sessions/provider"
         method: POST
         headers:
-          Accept: "application/*+json;version={{ vcd.api_version }},application/json;version={{ vcd.api_version }}"
+          Accept: "application/*+json;version={{ vcd_api_version }},application/json;version={{ vcd_api_version }}"
           Authorization: "Basic {{ (vcd_user + ':' + vcd_password) | b64encode }}"
         return_content: yes
         validate_certs: false
