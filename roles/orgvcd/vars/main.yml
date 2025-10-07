@@ -1,6 +1,9 @@
 ---
-vdc_name: "VDC-Demo"
-provider_vdc: "ProviderVDC1"
-storage_profile: "Default"
-placement_policy: "High-Performance"
-sizing_policy: "Standard"
+vCpuInMhz: 1000
+networkQuota: 10
+isThinProvision: true
+usesFastProvisioning: true
+allocationModel: "ReservationPool"
+storageProfile: "Standard"
+providerVdc: "ProviderVDC-Default"
+networkPool: "Default-NetworkPool"
