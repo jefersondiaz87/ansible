@@ -18,6 +18,7 @@
     provider_vdc_name: "ProviderVDC"
     network_pool_name: "default-pool"
     storage_profile: "default"
+    vmQuota: "2"
 
   tasks:
     # Paso 1: Crear Tenant en CloudBlue

@@ -25,6 +25,7 @@
     lastName: "{{ lastName }}"
     networkType: "{{ networkType }}"
     trial: "{{ trial | default(false) }}"
+    vmQuota: "2"
 
   tasks:
     # =======================================
@@ -74,6 +75,7 @@
           networkType: "{{ networkType }}"
           trial: "{{ trial | default(false) }}"
           cleanup: "{{ cleanup | default(false) }}"
+          vmQuota: "{{ vmQuota }}"
 
     # =======================================
     # Ejecución de roles (ya con token disponible)

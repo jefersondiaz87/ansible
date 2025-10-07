@@ -40,7 +40,7 @@
         <OrgSettings>
           <OrgGeneralSettings>
             <CanPublishCatalogs>true</CanPublishCatalogs>
-            <DeployedVMQuota>{{ vcd.vmQuota | default(10) }}</DeployedVMQuota>
+            <DeployedVMQuota>{{ vcd.vmQuota | default(2) }}</DeployedVMQuota>
             <StoredVMQuota>{{ vcd.storageQuota | default(10) }}</StoredVMQuota>
           </OrgGeneralSettings>
         </OrgSettings>
