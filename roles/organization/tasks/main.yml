@@ -1,41 +1,30 @@
 ---
 # playbook: create_org_and_admin.yml
-# Crea una Organization y un usuario administrador en VMware Cloud Director usando Cloud API
+# Crea una Organization y un usuario administrador en VMware Cloud Director usando un script Python
 
-- name: "✅ Crear organización en VMware Cloud Director"
-  ansible.builtin.uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs"
-    method: POST
-    headers:
-      x-vcloud-authorization: "{{ vcd.access_token }}"
-      Content-Type: "application/json"
-      Accept: "application/json;version={{ vcd.api_version }}"
-    body_format: json
-    body:
-      name: "{{ vcd.orgFullName }}"
-      displayName: "{{ vcd.orgFullName }}"
-      description: "Organización creada vía API"
-    status_code: [201, 409] # 409 = ya existe
-    validate_certs: "{{ vcd.verify_ssl }}"
+- name: "✅ Crear organización en VMware Cloud Director (via Python SDK)"
+  vars:
+    org_params:
+      host: "{{ vcd.host }}"
+      user: "{{ vcd.user }}"
+      password: "{{ vcd.password }}"
+      org_name: "{{ vcd.orgFullName }}"
+      full_name: "{{ vcd.orgFullName }}"
+  ansible.builtin.command: >
+    python3 {{ role_path }}/files/crear_org_vcd.py '{{ org_params | to_json }}'
   register: org_create
+  changed_when: "'created' in org_create.stdout"
+  failed_when: org_create.rc != 0
   ignore_errors: yes
 
-- name: "ℹ️ Verificar si la organización ya existe"
-  set_fact:
-    org_exists: "{{ org_create.status == 409 }}"
-
-- name: "🔹 Mostrar resultado de la creación de la organización"
+- name: "🔍 Mostrar resultado de creación de organización"
   debug:
-    msg: >
-      {% if org_exists %}
-        ⚠️ La organización '{{ vcd.orgFullName }}' ya existe
-      {% else %}
-        ✅ Organización '{{ vcd.orgFullName }}' creada correctamente
-      {% endif %}
+    msg: "{{ org_create.stdout | from_json }}"
 
 - name: "✅ Crear usuario administrador en la organización"
+  when: org_create.stdout is search('created') or org_create.stdout is search('already')
   ansible.builtin.uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs/{{ org_create.json.id }}/users"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs/{{ vcd.orgId }}/users"
     method: POST
     headers:
       x-vcloud-authorization: "{{ vcd.access_token }}"
@@ -46,10 +35,10 @@
       name: "admin_{{ vcd.orgFullName | lower | replace(' ', '_') }}"
       password: "{{ vcd.adminPassword }}"
       description: "Usuario admin de la organización"
-      role: "organizationAdmin"
+      role: "organizationAdministrator"
       email: "{{ vcd.mail }}"
       enabled: true
-    status_code: [201, 409] # 409 = ya existe
+    status_code: [201, 409]
     validate_certs: "{{ vcd.verify_ssl }}"
   register: admin_create
   ignore_errors: yes
