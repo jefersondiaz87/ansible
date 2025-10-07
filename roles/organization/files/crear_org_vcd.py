@@ -6,7 +6,7 @@ from pyvcloud.vcd.system import System
 def crear_org(host, user, password, org_name, full_name):
     if not host.endswith('/api'):
         host = host.rstrip('/') + '/api'
-    client = Client(host, api_version='38.1', verify_ssl_certs=False)
+    client = Client(host, api_version="37.1", verify_ssl_certs=False, serialization="json")
     client.set_credentials(BasicLoginCredentials(user, 'system', password))
     system = System(client)
     try:
