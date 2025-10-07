@@ -32,19 +32,18 @@
     # =======================================
     - name: Obtener token OAuth desde VCD
       ansible.builtin.uri:
-        url: "{{ vcd_hostname }}/oauth/provider/token"
+        url: "{{ vcd_hostname }}/cloudapi/1.0.0/sessions/provider"
         method: POST
         headers:
-          Content-Type: "application/x-www-form-urlencoded"
-        body: "grant_type=refresh_token&refresh_token={{ vcd_apikey }}"
-        body_format: form-urlencoded
+          Accept: "application/*+json;version=37.1,application/json;version=37.1"
+          Authorization: "Basic {{ (vcd_user + ':' + vcd_password) | b64encode }}"
         return_content: yes
         validate_certs: false
       register: vcd_auth_response
 
     - name: Guardar token JWT
       ansible.builtin.set_fact:
-        vcd_access_token: "{{ vcd_auth_response.json.access_token }}"
+        vcd_access_token: "{{ vcd_auth_response.headers['X-VMWARE-VCLOUD-ACCESS-TOKEN'] }}"
 
     - name: Mostrar token temporal (debug)
       ansible.builtin.debug:

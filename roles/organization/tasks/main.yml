@@ -1,41 +1,60 @@
 ---
 # playbook: create_org_and_admin.yml
-# Crea una Organization y un usuario administrador en VMware Cloud Director usando un script Python
+# Crea una Organization y un usuario administrador en VMware Cloud Director usando CloudAPI directamente
 
-- name: "✅ Crear organización en VMware Cloud Director (via Python SDK)"
-  vars:
-    org_params:
-      host: "{{ vcd.host }}"
-      user: "{{ vcd.user }}"
-      password: "{{ vcd.password }}"
-      org_name: "{{ vcd.orgFullName }}"
-      full_name: "{{ vcd.orgFullName }}"
-  ansible.builtin.command: >
-    python3 {{ role_path }}/files/crear_org_vcd.py '{{ org_params | to_json }}'
-  register: org_create
-  changed_when: "'created' in org_create.stdout"
-  failed_when: org_create.rc != 0
-  ignore_errors: yes
-
-- name: "🔍 Mostrar resultado de creación de organización"
-  debug:
-    msg: "{{ org_create.stdout | from_json }}"
-
-- name: "✅ Crear usuario administrador en la organización"
-  when: org_create.stdout is search('created') or org_create.stdout is search('already')
+- name: "✅ Crear organización en VMware Cloud Director (CloudAPI)"
   ansible.builtin.uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs/{{ vcd.orgId }}/users"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs"
     method: POST
     headers:
-      x-vcloud-authorization: "{{ vcd.access_token }}"
-      Content-Type: "application/json"
       Accept: "application/json;version={{ vcd.api_version }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "{{ vcd.orgFullName }}"
+      displayName: "{{ vcd.orgFullName }}"
+      isEnabled: true
+      description: "Organización creada automáticamente por Ansible"
+    status_code: [200, 201, 409] # 409 si ya existe
+    validate_certs: "{{ vcd.verify_ssl }}"
+  register: org_create
+  changed_when: org_create.status == 201
+  failed_when:
+    - org_create.status not in [200, 201, 409]
+
+- name: "🔍 Mostrar resultado de creación de la organización"
+  debug:
+    msg: >
+      {% if org_create.status == 201 %}
+        ✅ Organización '{{ vcd.orgFullName }}' creada correctamente.
+      {% elif org_create.status == 409 %}
+        ⚠️ La organización '{{ vcd.orgFullName }}' ya existe.
+      {% else %}
+        ❌ Error al crear la organización: {{ org_create }}
+      {% endif %}
+
+# Extrae el ID de la organización creada o existente
+- name: "🧩 Guardar ID de la organización creada"
+  set_fact:
+    org_id: "{{ (org_create.json.id | default('')) | regex_replace('^urn:vcloud:org:', '') }}"
+  when: org_create.json is defined
+
+- name: "✅ Crear usuario administrador en la organización"
+  when: org_create.status in [200, 201, 409]
+  ansible.builtin.uri:
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs/{{ org_create.json.id }}/users"
+    method: POST
+    headers:
+      Accept: "application/json;version={{ vcd.api_version }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
+      Content-Type: "application/json"
     body_format: json
     body:
       name: "admin_{{ vcd.orgFullName | lower | replace(' ', '_') }}"
       password: "{{ vcd.adminPassword }}"
-      description: "Usuario admin de la organización"
-      role: "organizationAdministrator"
+      description: "Usuario administrador de la organización"
+      role: "Organization Administrator"
       email: "{{ vcd.mail }}"
       enabled: true
     status_code: [201, 409]
@@ -43,15 +62,13 @@
   register: admin_create
   ignore_errors: yes
 
-- name: "ℹ️ Verificar si el usuario admin ya existe"
-  set_fact:
-    admin_exists: "{{ admin_create.status == 409 }}"
-
 - name: "🔹 Mostrar resultado del usuario admin"
   debug:
     msg: >
-      {% if admin_exists %}
-        ⚠️ El usuario admin ya existe en '{{ vcd.orgFullName }}'
+      {% if admin_create.status == 201 %}
+        ✅ Usuario administrador creado correctamente en '{{ vcd.orgFullName }}'.
+      {% elif admin_create.status == 409 %}
+        ⚠️ El usuario administrador ya existe en '{{ vcd.orgFullName }}'.
       {% else %}
-        ✅ Usuario admin creado correctamente en '{{ vcd.orgFullName }}'
+        ❌ Error al crear usuario admin: {{ admin_create }}
       {% endif %}
