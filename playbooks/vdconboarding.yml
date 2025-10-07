@@ -36,7 +36,7 @@
         method: POST
         headers:
           Accept: "application/*+json;version={{ vcd_api_version }},application/json;version={{ vcd_api_version }}"
-          Authorization: "Basic {{ (vcd_user + ':' + vcd_password) | b64encode }}"
+          Authorization: "Basic {{ (vcd_user + '@' + vcd_org + ':' + vcd_password) | b64encode }}"
         return_content: yes
         validate_certs: false
       register: vcd_auth_response
