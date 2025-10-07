@@ -15,7 +15,7 @@
 
 - name: Extraer ID de la organización
   set_fact:
-    org_id: "{{ org_check.json.record[0].id if (org_check.json.record | length > 0) else '' }}"
+    org_id: "{{ org_check.json.values[0].id if (org_check.json.values | length > 0) else '' }}"
 
 - name: Validar existencia de la organización
   fail:
