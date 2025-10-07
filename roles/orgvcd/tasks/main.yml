@@ -1,4 +1,11 @@
 # ===========================================================
+# EXTRAER PREFIJO DEL ORG VDC
+# ===========================================================
+- name: Extraer prefijo del Org VDC
+  set_fact:
+    locationPrefix: "{{ vcd.orgVdcName.split('-')[0] }}"
+
+# ===========================================================
 # VALIDAR ORGANIZACIÓN EXISTENTE
 # ===========================================================
 - name: Obtener ID de la organización
@@ -7,7 +14,7 @@
     method: GET
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "Bearer {{ vcd.access_token }}"
+      Authorization: "{{ vcd.access_token }}"
     return_content: yes
     validate_certs: false
   register: org_check
@@ -24,44 +31,89 @@
 # ===========================================================
 # RESOLVER COMPONENTES NECESARIOS
 # ===========================================================
-- name: Obtener Provider VDC
+- name: Obtener todos los Provider VDCs
   uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/providerVdcs?filter=name=={{ providerVdc }}"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/providerVdcs"
     method: GET
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "Bearer {{ vcd.access_token }}"
+      Authorization: "{{ vcd.access_token }}"
     return_content: yes
     validate_certs: false
   register: provider_check
 
-- name: Obtener Network Pool
+- name: Obtener todos los Network Pools
   uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/networkPools?filter=name=={{ networkPool }}"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/networkPools/networkPoolSummaries"
     method: GET
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "Bearer {{ vcd.access_token }}"
+      Authorization: "{{ vcd.access_token }}"
     return_content: yes
     validate_certs: false
   register: network_check
 
-- name: Obtener Storage Profile
+- name: Obtener todos los Storage Profiles
   uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/storageProfiles?filter=name=={{ storageProfile }}"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/storageProfiles"
     method: GET
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "Bearer {{ vcd.access_token }}"
+      Authorization: "{{ vcd.access_token }}"
     return_content: yes
     validate_certs: false
   register: storage_check
 
-- name: Definir IDs de componentes
+- name: Buscar Provider VDC por prefijo
   set_fact:
-    provider_id: "{{ provider_check.json['values'][0].id }}"
-    network_id: "{{ network_check.json['values'][0].id }}"
-    storage_id: "{{ storage_check.json['values'][0].id }}"
+    provider_match: >-
+      {{
+        provider_check.json['values'] |
+        selectattr('name', 'search', '^' ~ locationPrefix) |
+        list |
+        first
+      }}
+    provider_id: "{{ provider_match.id }}"
+  when: provider_check.json['values'] | length > 0
+
+- name: Buscar Network Pool por prefijo
+  set_fact:
+    network_match: >-
+      {{
+        network_check.json['values'] |
+        selectattr('name', 'search', '^' ~ locationPrefix) |
+        list |
+        first
+      }}
+    network_id: "{{ network_match.id }}"
+  when: network_check.json['values'] | length > 0
+
+- name: Buscar Storage Profile por nombre
+  set_fact:
+    storage_match: >-
+      {{
+        storage_check.json['values'] |
+        selectattr('name', 'equalto', vcd.storageProfileName) |
+        list |
+        first
+      }}
+    storage_id: "{{ storage_match.id }}"
+  when: storage_check.json['values'] | length > 0
+
+- name: Validar Provider VDC encontrado
+  fail:
+    msg: "❌ No se encontró ningún Provider VDC que comience con '{{ locationPrefix }}'."
+  when: provider_id is not defined
+
+- name: Validar Network Pool encontrado
+  fail:
+    msg: "❌ No se encontró ningún Network Pool que comience con '{{ locationPrefix }}'."
+  when: network_id is not defined
+
+- name: Validar Storage Profile encontrado
+  fail:
+    msg: "❌ No se encontró Storage Profile con nombre '{{ vcd.storageProfileName }}'."
+  when: storage_id is not defined
 
 # ===========================================================
 # VALIDAR EXISTENCIA DEL ORG VDC
@@ -72,7 +124,7 @@
     method: GET
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "Bearer {{ vcd.access_token }}"
+      Authorization: "{{ vcd.access_token }}"
     return_content: yes
     validate_certs: false
   register: vdc_check
@@ -91,14 +143,14 @@
     method: POST
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "Bearer {{ vcd.access_token }}"
+      Authorization: "{{ vcd.access_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
       name: "{{ vcd.orgVdcName }}"
       description: "Automatically created organization vdc {{ vcd.orgVdcName }}"
       isEnabled: true
-      allocationModel: "{{ allocationModel }}"
+      allocationModel: "{{ vcd.allocationModel }}"
       computeCapacity:
         cpu:
           units: "MHz"
@@ -115,10 +167,12 @@
       storageProfiles:
         - id: "{{ storage_id }}"
           limit: "{{ (vcd.storageQuota | float * 1024) | int }}"
-      isThinProvision: "{{ isThinProvision }}"
-      usesFastProvisioning: "{{ usesFastProvisioning }}"
+      isThinProvision: "{{ vcd.isThinProvision }}"
+      usesFastProvisioning: "{{ vcd.usesFastProvisioning }}"
       networkQuota: "{{ vcd.networkQuota }}"
-      vCpuInMhz: "{{ vCpuInMhz }}"
+      vCpuInMhz: "{{ vcd.vCpuInMhz }}"
+      organization:
+        id: "{{ org_id }}"
     validate_certs: false
   register: vdc_create
 
