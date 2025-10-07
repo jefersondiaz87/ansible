@@ -4,6 +4,8 @@ from pyvcloud.vcd.client import Client, BasicLoginCredentials
 from pyvcloud.vcd.system import System
 
 def crear_org(host, user, password, org_name, full_name):
+    if not host.endswith('/api'):
+        host = host.rstrip('/') + '/api'
     client = Client(host, api_version='38.1', verify_ssl_certs=False)
     client.set_credentials(BasicLoginCredentials(user, 'System', password))
     system = System(client)
