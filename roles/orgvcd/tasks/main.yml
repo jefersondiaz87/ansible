@@ -32,7 +32,7 @@
       x-vcloud-authorization: "{{ vcd.access_token }}"
       Content-Type: "application/vnd.vmware.admin.organization+xml"
     body: |
-      <Org xmlns="http://www.vmware.com/vcloud/v1.5" name="{{ vcd.orgName }}" fullName="{{ vcd.orgFullName }}" isEnabled="true">
+      <Org xmlns="http://www.vmware.com/vcloud/v1.5" name="{{ vcd.orgVdcName }}" fullName="{{ vcd.orgFullName }}" isEnabled="true">
         <Description>Organización creada vía Ansible</Description>
         <StoredVmQuota>{{ vcd.storageQuota | default(10) }}</StoredVmQuota>
         <DeploymentLeaseSeconds>86400</DeploymentLeaseSeconds>
@@ -53,4 +53,4 @@
 
 - name: Confirmar creación de la organización
   debug:
-    msg: "🏗️ Organización '{{ vcd.orgName }}' creada exitosamente vía API clásica."
+    msg: "🏗️ Organización '{{ vdc.orgVdcName }}' creada exitosamente vía API clásica."
