@@ -147,7 +147,7 @@
 
 - name: Determinar si el Org VDC ya existe
   set_fact:
-    vdc_exists: "{{ vdc_check.json.values | length > 0 }}"
+    vdc_exists: "{{ vdc_check.json['values'] | length > 0 }}"
 
 # ===========================================================
 # CREAR ORG VDC
@@ -155,7 +155,7 @@
 - name: Crear Org VDC vía CloudAPI
   when: not vdc_exists
   uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/orgVdcs"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs/{{ vcd.orgVdcName }}/vdcs"
     method: POST
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
@@ -187,8 +187,6 @@
       usesFastProvisioning: "{{ vcd.usesFastProvisioning }}"
       networkQuota: "{{ vcd.networkQuota }}"
       vCpuInMhz: "{{ vcd.vCpuInMhz }}"
-      organization:
-        id: "{{ org_id }}"
     validate_certs: false
   register: vdc_create
 
