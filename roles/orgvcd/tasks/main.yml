@@ -73,8 +73,13 @@
         list |
         first
       }}
-    provider_id: "{{ provider_match.id }}"
   when: provider_check.json['values'] | length > 0
+
+- name: Extraer ID del Provider VDC
+  set_fact:
+    provider_id: "{{ provider_match.id }}"
+  when: provider_match is defined
+
 
 - name: Buscar Network Pool por prefijo
   set_fact:
@@ -85,8 +90,12 @@
         list |
         first
       }}
-    network_id: "{{ network_match.id }}"
   when: network_check.json['values'] | length > 0
+
+- name: Extraer ID del Network VDC
+  set_fact:
+    network_id: "{{ network_match.id }}"
+  when: network_match is defined
 
 - name: Buscar Storage Profile por nombre
   set_fact:
@@ -97,8 +106,13 @@
         list |
         first
       }}
-    storage_id: "{{ storage_match.id }}"
   when: storage_check.json['values'] | length > 0
+
+- name: Extraer ID del Storage VDC
+  set_fact:
+    storage_id: "{{ storage_match.id }}"
+  when: storage_match is defined
+
 
 - name: Validar Provider VDC encontrado
   fail:
