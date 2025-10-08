@@ -161,34 +161,34 @@
       Accept: "application/json;version={{ vcd.api_version }}"
       Authorization: "Bearer {{ vcd.access_token }}"
       Content-Type: "application/json"
-    body_format: json
     body:
-    name: "{{ vcd.orgVdcName }}"
-    description: "Automatically created organization vdc {{ vcd.orgVdcName }}"
-    isEnabled: true
-    allocationModel: "{{ allocationModel }}"
-    computeCapacity:
-      cpu:
-        units: "MHz"
-        allocated: "{{ (vcd.cpuQuota | float * 1000) | int }}"
-        limit: "{{ (vcd.cpuQuota | float * 1000) | int }}"
-      memory:
-        units: "MB"
-        allocated: "{{ (vcd.memoryQuota | float * 1024) | int }}"
-        limit: "{{ (vcd.memoryQuota | float * 1024) | int }}"
-    providerVdc:
-      id: "{{ provider_id }}"
-    networkPool:
-      id: "{{ network_id }}"
-    storageProfiles:
-      - id: "{{ storage_id }}"
-        limit: "{{ (vcd.storageQuota | float * 1024) | int }}"
-    orgRef:
-      id: "{{ org_id }}"
-    isThinProvision: "{{ isThinProvision }}"
-    usesFastProvisioning: "{{ usesFastProvisioning }}"
-    networkQuota: "{{ networkQuota }}"
-    vCpuInMhz: "{{ vCpuInMhz }}"
+      name: "{{ vcd.orgVdcName }}"
+      description: "Automatically created organization vdc {{ vcd.orgVdcName }}"
+      isEnabled: true
+      allocationModel: "{{ allocationModel }}"
+      computeCapacity:
+        cpu:
+          units: "MHz"
+          allocated: "{{ (vcd.cpuQuota | float * 1000) | int }}"
+          limit: "{{ (vcd.cpuQuota | float * 1000) | int }}"
+        memory:
+          units: "MB"
+          allocated: "{{ (vcd.memoryQuota | float * 1024) | int }}"
+          limit: "{{ (vcd.memoryQuota | float * 1024) | int }}"
+      providerVdc:
+        id: "{{ provider_id }}"
+      networkPool:
+        id: "{{ network_id }}"
+      storageProfiles:
+        - id: "{{ storage_id }}"
+          limit: "{{ (vcd.storageQuota | float * 1024) | int }}"
+      orgRef:
+        id: "{{ org_id }}"
+      isThinProvision: "{{ isThinProvision }}"
+      usesFastProvisioning: "{{ usesFastProvisioning }}"
+      networkQuota: "{{ networkQuota }}"
+      vCpuInMhz: "{{ vCpuInMhz }}"
+    body_format: json
     validate_certs: false
   register: vdc_create
 
