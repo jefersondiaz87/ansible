@@ -55,7 +55,7 @@
 
 - name: Obtener todos los Storage Profiles
   uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/storageProfiles"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/providerVdcs"
     method: GET
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
