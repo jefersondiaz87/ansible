@@ -187,7 +187,7 @@
       id: "{{ org_id }}"
     isThinProvision: "{{ isThinProvision }}"
     usesFastProvisioning: "{{ usesFastProvisioning }}"
-    networkQuota: "{{ vcd.networkQuota }}"
+    networkQuota: "{{ networkQuota }}"
     vCpuInMhz: "{{ vCpuInMhz }}"
     validate_certs: false
   register: vdc_create
