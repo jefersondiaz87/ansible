@@ -37,7 +37,7 @@
     method: GET
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "{{ vcd.access_token }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
     return_content: yes
     validate_certs: false
   register: provider_check
@@ -48,7 +48,7 @@
     method: GET
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "{{ vcd.access_token }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
     return_content: yes
     validate_certs: false
   register: network_check
@@ -59,7 +59,7 @@
     method: GET
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "{{ vcd.access_token }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
     return_content: yes
     validate_certs: false
   register: storage_check
@@ -124,7 +124,7 @@
     method: GET
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "{{ vcd.access_token }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
     return_content: yes
     validate_certs: false
   register: vdc_check
@@ -143,7 +143,7 @@
     method: POST
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "{{ vcd.access_token }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
