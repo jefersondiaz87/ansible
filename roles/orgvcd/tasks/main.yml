@@ -155,7 +155,7 @@
 - name: Crear Org VDC vía CloudAPI
   when: not vdc_exists
   uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs/{{ org_uuid }}/vdcs"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs/vdcs"
     method: POST
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
@@ -163,30 +163,32 @@
       Content-Type: "application/json"
     body_format: json
     body:
-      name: "{{ vcd.orgVdcName }}"
-      description: "Automatically created organization vdc {{ vcd.orgVdcName }}"
-      isEnabled: true
-      allocationModel: "{{ allocationModel }}"
-      computeCapacity:
-        cpu:
-          units: "MHz"
-          allocated: "{{ (vcd.cpuQuota | float * 1000) | int }}"
-          limit: "{{ (vcd.cpuQuota | float * 1000) | int }}"
-        memory:
-          units: "MB"
-          allocated: "{{ (vcd.memoryQuota | float * 1024) | int }}"
-          limit: "{{ (vcd.memoryQuota | float * 1024) | int }}"
-      providerVdc:
-        id: "{{ provider_id }}"
-      networkPool:
-        id: "{{ network_id }}"
-      storageProfiles:
-        - id: "{{ storage_id }}"
-          limit: "{{ (vcd.storageQuota | float * 1024) | int }}"
-      isThinProvision: "{{ isThinProvision }}"
-      usesFastProvisioning: "{{ usesFastProvisioning }}"
-      networkQuota: "{{ networkQuota }}"
-      vCpuInMhz: "{{ vCpuInMhz }}"
+    name: "{{ vcd.orgVdcName }}"
+    description: "Automatically created organization vdc {{ vcd.orgVdcName }}"
+    isEnabled: true
+    allocationModel: "{{ vcd.allocationModel }}"
+    computeCapacity:
+      cpu:
+        units: "MHz"
+        allocated: "{{ (vcd.cpuQuota | float * 1000) | int }}"
+        limit: "{{ (vcd.cpuQuota | float * 1000) | int }}"
+      memory:
+        units: "MB"
+        allocated: "{{ (vcd.memoryQuota | float * 1024) | int }}"
+        limit: "{{ (vcd.memoryQuota | float * 1024) | int }}"
+    providerVdc:
+      id: "{{ provider_id }}"
+    networkPool:
+      id: "{{ network_id }}"
+    storageProfiles:
+      - id: "{{ storage_id }}"
+        limit: "{{ (vcd.storageQuota | float * 1024) | int }}"
+    orgRef:
+      id: "{{ org_id }}"
+    isThinProvision: "{{ vcd.isThinProvision }}"
+    usesFastProvisioning: "{{ vcd.usesFastProvisioning }}"
+    networkQuota: "{{ vcd.networkQuota }}"
+    vCpuInMhz: "{{ vcd.vCpuInMhz }}"
     validate_certs: false
   register: vdc_create
 
