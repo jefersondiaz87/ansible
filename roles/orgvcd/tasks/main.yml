@@ -80,7 +80,6 @@
     provider_id: "{{ provider_match.id }}"
   when: provider_match is defined
 
-
 - name: Buscar Network Pool por prefijo
   set_fact:
     network_match: >-
@@ -102,7 +101,7 @@
     storage_match: >-
       {{
         storage_check.json['values'] |
-        selectattr('name', 'equalto', vcd.storageProfileName) |
+        selectattr('name', 'search', '^' ~ locationPrefix) |
         list |
         first
       }}
@@ -112,7 +111,6 @@
   set_fact:
     storage_id: "{{ storage_match.id }}"
   when: storage_match is defined
-
 
 - name: Validar Provider VDC encontrado
   fail:
