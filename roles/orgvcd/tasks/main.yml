@@ -183,10 +183,10 @@
       storageProfiles:
         - id: "{{ storage_id }}"
           limit: "{{ (vcd.storageQuota | float * 1024) | int }}"
-      isThinProvision: "{{ vcd.isThinProvision }}"
-      usesFastProvisioning: "{{ vcd.usesFastProvisioning }}"
+      isThinProvision: "{{ isThinProvision }}"
+      usesFastProvisioning: "{{ usesFastProvisioning }}"
       networkQuota: "{{ vcd.networkQuota }}"
-      vCpuInMhz: "{{ vcd.vCpuInMhz }}"
+      vCpuInMhz: "{{ vCpuInMhz }}"
     validate_certs: false
   register: vdc_create
 
