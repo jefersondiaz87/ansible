@@ -127,16 +127,20 @@
     msg: "❌ No se encontró Storage Profile con nombre '{{ vcd.storageProfileName }}'."
   when: storage_id is not defined
 
+- name: Extraer UUID desde el orgId
+  set_fact:
+    org_uuid: "{{ org_id.split(':')[-1] }}"
+
 # ===========================================================
 # VALIDAR EXISTENCIA DEL ORG VDC
 # ===========================================================
 - name: Verificar si el Org VDC ya existe
   uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/vdcs?filter=orgRef.id=={{ org_id }}"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/vdcs/urn:vcloud:vdc:{{ org_uuid }}"
     method: GET
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "{{ vcd.access_token }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
     return_content: yes
     validate_certs: false
   register: vdc_list
@@ -150,7 +154,6 @@
         list |
         length > 0
       }}
-
 
 # ===========================================================
 # CREAR ORG VDC
