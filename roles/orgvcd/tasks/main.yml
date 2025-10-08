@@ -166,7 +166,7 @@
       name: "{{ vcd.orgVdcName }}"
       description: "Automatically created organization vdc {{ vcd.orgVdcName }}"
       isEnabled: true
-      allocationModel: "{{ vcd.allocationModel }}"
+      allocationModel: "{{ allocationModel }}"
       computeCapacity:
         cpu:
           units: "MHz"
