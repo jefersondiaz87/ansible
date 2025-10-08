@@ -155,7 +155,7 @@
 - name: Crear Org VDC vía CloudAPI
   when: not vdc_exists
   uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs/{{ vcd.orgVdcName }}/vdcs"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs/{{ org_uuid }}/vdcs"
     method: POST
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
