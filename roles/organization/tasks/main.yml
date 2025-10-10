@@ -1,150 +1,31 @@
----
-# ============================================================
-#  VMware Cloud Director - Network Setup (Edge + Routed + NAT)
-# ============================================================
-
-- name: 📡 Obtener OrgVDC ID por nombre
-  uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/vdcs?filter=name=={{ vcd.orgVdcName }}"
-    method: GET
-    headers:
-      Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "Bearer {{ vcd.access_token }}"
-    validate_certs: false
-    return_content: yes
-  register: vdc_result
-
-- name: Validar OrgVDC encontrado
-  fail:
-    msg: "❌ OrgVDC '{{ vcd.orgVdcName }}' no encontrado."
-  when: vdc_result.json['values'] | length == 0
-
-- set_fact:
-    orgVdc_id: "{{ vdc_result.json['values'][0].id }}"
-    org_id: "{{ vdc_result.json['values'][0].org.id }}"
-
-# ============================================================
-#  EDGE GATEWAY
-# ============================================================
-
-- name: 🌉 Buscar External Network con prefijo {{ vcd.external_network_prefix }}
-  uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/externalNetworks"
-    method: GET
-    headers:
-      Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "Bearer {{ vcd.access_token }}"
-    validate_certs: false
-  register: external_networks
-
-- name: Seleccionar external network coincidente
-  set_fact:
-    external_network_match: >-
-      {{
-        external_networks.json['values']
-        | selectattr('name', 'search', '^' ~ vcd.external_network_prefix)
-        | list
-        | first
-      }}
-  when: external_networks.json['values'] | length > 0
-
-- name: Validar red externa encontrada
-  fail:
-    msg: "❌ No se encontró ninguna red externa con prefijo '{{ vcd.external_network_prefix }}'."
-  when: external_network_match is not defined
-
-- set_fact:
-    external_network_id: "{{ external_network_match.id }}"
-
-- name: ⚙️ Crear Edge Gateway
-  uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/edgeGateways"
+- name: "✅ Crear organización en VMware Cloud Director (CloudAPI)"
+  ansible.builtin.uri:
+    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs"
     method: POST
     headers:
-      Accept: "application/json;version={{ vcd.api_version }}"
+      Accept: "application/json;version={{ vcd.api_version }},application/*+json;version={{ vcd.api_version }}"
       Authorization: "Bearer {{ vcd.access_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
-      name: "{{ vcd.edge_name }}"
-      orgVdcRef:
-        id: "{{ orgVdc_id }}"
-      ownerRef:
-        id: "{{ org_id }}"
-      backingNetworkId: "{{ external_network_id }}"
-      gatewayBackingType: "NSXT_BACKED"
-      configuration:
-        distributedRoutingEnabled: true
-        advancedNetworkingEnabled: true
-    validate_certs: false
-  register: edge_creation
-  failed_when: edge_creation.status not in [200, 201]
+      name: "{{ vcd.orgFullName }}"
+      displayName: "{{ vcd.orgFullName }}"
+      isEnabled: true
+      description: "Organización creada automáticamente por Ansible"
+    status_code: [200, 201, 409] # 409 si ya existe
+    validate_certs: "{{ vcd.verify_ssl }}"
+  register: org_create
+  changed_when: org_create.status == 201
+  failed_when:
+    - org_create.status not in [200, 201, 409]
 
-- set_fact:
-    edge_id: "{{ edge_creation.json.id }}"
-
-# ============================================================
-#  ROUTED NETWORK
-# ============================================================
-
-- name: 🌐 Crear red Routed dentro del OrgVDC
-  uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/orgVdcNetworks"
-    method: POST
-    headers:
-      Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "Bearer {{ vcd.access_token }}"
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      name: "{{ vcd.routed_net_name }}"
-      networkType: "Routed"
-      orgVdc:
-        id: "{{ orgVdc_id }}"
-      connection:
-        routerRef:
-          id: "{{ edge_id }}"
-      subnets:
-        values:
-          - gateway: "{{ vcd.gateway_cidr.split('/')[0] }}"
-            prefixLength: "{{ vcd.gateway_cidr.split('/')[1] | int }}"
-            enabled: true
-      dnsServer1: "{{ vcd.dns1 }}"
-      dnsServer2: "{{ vcd.dns2 }}"
-    validate_certs: false
-  register: routed_creation
-  failed_when: routed_creation.status not in [200, 201]
-
-- set_fact:
-    network_id: "{{ routed_creation.json.id }}"
-
-# ============================================================
-#  NAT RULE
-# ============================================================
-
-- name: 🔁 Crear regla SNAT
-  uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/edgeGateways/{{ edge_id }}/nat/rules"
-    method: POST
-    headers:
-      Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "Bearer {{ vcd.access_token }}"
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      enabled: true
-      ruleType: "SNAT"
-      externalAddresses: "{{ vcd.external_ip }}"
-      internalAddresses: "{{ vcd.nat_internal_cidr }}"
-      logging: false
-      description: "SNAT {{ vcd.orgVdcName }}"
-    validate_certs: false
-  register: snat_creation
-  failed_when: snat_creation.status not in [200, 201]
-
-- name: ✅ Resultado final
+- name: "🔍 Mostrar resultado de creación de la organización"
   debug:
-    msg:
-      - "Edge Gateway ID: {{ edge_id }}"
-      - "Network ID: {{ network_id }}"
-      - "SNAT creada exitosamente"
+    msg: >
+      {% if org_create.status == 201 %}
+        ✅ Organización '{{ vcd.orgFullName }}' creada correctamente.
+      {% elif org_create.status == 409 %}
+        ⚠️ La organización '{{ vcd.orgFullName }}' ya existe.
+      {% else %}
+        ❌ Error al crear la organización: {{ org_create }}
+      {% endif %}
