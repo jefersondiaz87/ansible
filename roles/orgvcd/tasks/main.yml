@@ -21,7 +21,7 @@
 
 - name: Extraer ID de la organización
   set_fact:
-    org_id: "{{ org_check.json['values'][0].id if (org_check.json['values'] | length > 0) else '' }}"
+    org_id: "{{ org_check.json.values[0].id if (org_check.json.values | length > 0) else '' }}"
 
 - name: Validar existencia de la organización
   fail:
@@ -31,6 +31,7 @@
 # ===========================================================
 # RESOLVER COMPONENTES NECESARIOS
 # ===========================================================
+
 - name: Obtener todos los Provider VDCs
   uri:
     url: "{{ vcd.host }}/cloudapi/1.0.0/providerVdcs"
@@ -42,6 +43,25 @@
     validate_certs: false
   register: provider_check
 
+- name: Buscar Provider VDC por prefijo regional
+  set_fact:
+    provider_match: >-
+      {{
+        provider_check.json.values
+        | selectattr('name', 'search', '^' ~ locationPrefix)
+        | list
+        | first
+      }}
+  when: provider_check.json.values | length > 0
+
+- name: Validar Provider VDC encontrado
+  fail:
+    msg: "❌ No se encontró ningún Provider VDC que comience con '{{ locationPrefix }}'."
+  when: provider_match is not defined
+
+# ===========================================================
+# NETWORK POOL asociado al NSX Manager del Provider
+# ===========================================================
 - name: Obtener todos los Network Pools
   uri:
     url: "{{ vcd.host }}/cloudapi/1.0.0/networkPools/networkPoolSummaries"
@@ -53,9 +73,29 @@
     validate_certs: false
   register: network_check
 
-- name: Obtener todos los Storage Profiles
+- name: Buscar Network Pool por NSX Manager del Provider
+  set_fact:
+    network_match: >-
+      {{
+        network_check.json.values
+        | selectattr('managingOwnerRef.name', 'equalto', provider_match.nsxTManager.name)
+        | selectattr('name', 'search', locationPrefix)
+        | list
+        | first
+      }}
+  when: network_check.json.values | length > 0
+
+- name: Validar Network Pool encontrado
+  fail:
+    msg: "❌ No se encontró ningún Network Pool asociado al NSX Manager '{{ provider_match.nsxTManager.name }}'."
+  when: network_match is not defined
+
+# ===========================================================
+# STORAGE PROFILE asociado al Provider VDC
+# ===========================================================
+- name: Obtener todos los Storage Profiles (Policies)
   uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/providerVdcs"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/pvdcStoragePolicies"
     method: GET
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
@@ -64,72 +104,31 @@
     validate_certs: false
   register: storage_check
 
-- name: Buscar Provider VDC por prefijo
-  set_fact:
-    provider_match: >-
-      {{
-        provider_check.json['values'] |
-        selectattr('name', 'search', '^' ~ locationPrefix) |
-        list |
-        first
-      }}
-  when: provider_check.json['values'] | length > 0
-
-- name: Extraer ID del Provider VDC
-  set_fact:
-    provider_id: "{{ provider_match.id }}"
-  when: provider_match is defined
-
-- name: Buscar Network Pool por prefijo
-  set_fact:
-    network_match: >-
-      {{
-        network_check.json['values'] |
-        selectattr('name', 'search', '^' ~ locationPrefix) |
-        list |
-        first
-      }}
-  when: network_check.json['values'] | length > 0
-
-- name: Extraer ID del Network VDC
-  set_fact:
-    network_id: "{{ network_match.id }}"
-  when: network_match is defined
-
-- name: Buscar Storage Profile por nombre
+- name: Buscar Storage Policy por Provider VDC
   set_fact:
     storage_match: >-
       {{
-        storage_check.json['values'] |
-        selectattr('name', 'search', '^' ~ locationPrefix) |
-        list |
-        first
+        storage_check.json.values
+        | selectattr('providerVdcRef.name', 'equalto', provider_match.name)
+        | list
+        | first
       }}
-  when: storage_check.json['values'] | length > 0
-
-- name: Extraer ID del Storage VDC
-  set_fact:
-    storage_id: "{{ storage_match.id }}"
-  when: storage_match is defined
-
-- name: Validar Provider VDC encontrado
-  fail:
-    msg: "❌ No se encontró ningún Provider VDC que comience con '{{ locationPrefix }}'."
-  when: provider_id is not defined
-
-- name: Validar Network Pool encontrado
-  fail:
-    msg: "❌ No se encontró ningún Network Pool que comience con '{{ locationPrefix }}'."
-  when: network_id is not defined
+  when: storage_check.json.values | length > 0
 
 - name: Validar Storage Profile encontrado
   fail:
-    msg: "❌ No se encontró Storage Profile con nombre '{{ vcd.storageProfileName }}'."
-  when: storage_id is not defined
+    msg: "❌ No se encontró Storage Policy asociada al Provider '{{ provider_match.name }}'."
+  when: storage_match is not defined
 
-- name: Extraer UUID desde el orgId
-  set_fact:
-    org_uuid: "{{ org_id.split(':')[-1] }}"
+# ===========================================================
+# MOSTRAR RESULTADOS
+# ===========================================================
+- name: Mostrar nombres de componentes detectados
+  debug:
+    msg:
+      - "✅ Provider VDC: {{ provider_match.name }}"
+      - "✅ Network Pool: {{ network_match.name }}"
+      - "✅ Storage Profile: {{ storage_match.name }}"
 
 # ===========================================================
 # VALIDAR EXISTENCIA DEL ORG VDC
@@ -147,52 +146,44 @@
 
 - name: Determinar si el Org VDC ya existe
   set_fact:
-    vdc_exists: "{{ vdc_check.json['values'] | length > 0 }}"
+    vdc_exists: "{{ vdc_check.json.values | length > 0 }}"
 
 # ===========================================================
-# CREAR ORG VDC
+# CALCULAR MODELO DE ASIGNACIÓN SEGÚN "TRIAL"
 # ===========================================================
-- name: Crear Org VDC vía CloudAPI
-  when: not vdc_exists
-  uri:
-    url: "{{ vcd.host }}/cloudapi/1.0.0/orgs/vdcs"
-    method: POST
-    headers:
-      Accept: "application/json;version={{ vcd.api_version }}"
-      Authorization: "Bearer {{ vcd.access_token }}"
-      Content-Type: "application/json"
-    body:
-      name: "{{ vcd.orgVdcName }}"
-      description: "Automatically created organization vdc {{ vcd.orgVdcName }}"
-      isEnabled: true
-      allocationModel: "{{ allocationModel }}"
-      computeCapacity:
-        cpu:
-          units: "MHz"
-          allocated: "{{ (vcd.cpuQuota | float * 1000) | int }}"
-          limit: "{{ (vcd.cpuQuota | float * 1000) | int }}"
-        memory:
-          units: "MB"
-          allocated: "{{ (vcd.memoryQuota | float * 1024) | int }}"
-          limit: "{{ (vcd.memoryQuota | float * 1024) | int }}"
-      providerVdc:
-        id: "{{ provider_id }}"
-      networkPool:
-        id: "{{ network_id }}"
-      storageProfiles:
-        - id: "{{ storage_id }}"
-          limit: "{{ (vcd.storageQuota | float * 1024) | int }}"
-      orgRef:
-        id: "{{ org_id }}"
-      isThinProvision: "{{ isThinProvision }}"
-      usesFastProvisioning: "{{ usesFastProvisioning }}"
-      networkQuota: "{{ networkQuota }}"
-      vCpuInMhz: "{{ vCpuInMhz }}"
-    body_format: json
-    validate_certs: false
-  register: vdc_create
+- name: Determinar modelo de asignación
+  set_fact:
+    allocation_model: >-
+      {% if vcd.trial | bool %}
+      PayAsYouGo
+      {% else %}
+      AllocationPool
+      {% endif %}
 
-- name: Confirmar creación del Org VDC
-  when: not vdc_exists
+- name: Mostrar modelo de asignación seleccionado
   debug:
-    msg: "✅ Org VDC '{{ vcd.orgVdcName }}' creado exitosamente con ID '{{ vdc_create.json.id }}'."
+    msg: "⚙️ Modo de asignación seleccionado: {{ allocation_model }}"
+
+# ===========================================================
+# 4️⃣ Ejecutar script PowerShell remoto
+# ===========================================================
+- name: Ejecutar script PowerCLI remoto con variables dinámicas
+  win_shell: |
+    $params = @{
+      Server = "{{vcd.host}}"
+      Username = "{{vcd.user}}"
+      Password = "{{vcd.password}}"
+      OrgName = "{{ vcd.orgFullName }}"
+      VdcName = "{{ vcd.orgVdcName }}"
+      ProvName = "{{ provider_match.name }}"
+      SpName = "{{ storage_match.name }}"
+      NpName = "{{ network_match.name }}"
+      CpuAllocation = {{ vcd.cpuQuota }}
+      MemoryAllocation = {{ vcd.memoryQuota }}
+      StorageAllocation = {{ vcd.storageQuota }}
+      Description = "Organización {{ orgFullName }} - creado por AWX"
+      AllocationModel = "{{ allocation_model }}"
+    }
+
+    # Pasar al script PowerShell principal
+    powershell.exe -ExecutionPolicy Bypass -File "C:\Users\jeferson.diaz\Documents\WindowsPowerShell\Scripts\orgvcd.ps1" @params

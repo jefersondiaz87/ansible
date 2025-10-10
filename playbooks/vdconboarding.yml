@@ -12,7 +12,8 @@
     vcd_password: "{{ lookup('env', 'VCD_PASSWORD') }}"
     vcd_verify_ssl_certs: "{{ lookup('env', 'VCD_VERIFY_SSL_CERTS') | default(false) }}"
     vcd_api_version: "{{ lookup('env', 'VCD_API_VERSION') | default('39.1') }}"
-    vcd_apikey: "{{ lookup('env', 'VCD_TOKEN') }}" # Asegúrate de tener este valor en credenciales
+    vcd_apikey: "{{ lookup('env', 'VCD_TOKEN') }}"
+    vcd_metadata: "{{ lookup('env', 'VCD_METADATA_JSON') | from_json }}" # Asegúrate de tener este valor en credenciales
 
     # 📦 Datos dinámicos — enviados desde survey o extra_vars
     orgFullName: "{{ orgFullName }}"
@@ -76,6 +77,7 @@
           trial: "{{ trial | default(false) }}"
           cleanup: "{{ cleanup | default(false) }}"
           vmQuota: "{{ vmQuota }}"
+          metadata: "{{vcd_metadata}}"
 
     # =======================================
     # Ejecución de roles (ya con token disponible)
@@ -87,5 +89,5 @@
         vcd: "{{ vcd_context }}"
       loop:
         - organization
-        #- orgvcd
+        - orgvcd
         #- network
