@@ -168,6 +168,7 @@
 # 4️⃣ Ejecutar script PowerShell remoto
 # ===========================================================
 - name: Ejecutar script PowerCLI remoto con variables dinámicas
+  delegate_to: win-builder
   win_shell: |
     $params = @{
       Server = "{{vcd.host}}"
@@ -188,8 +189,8 @@
     # Pasar al script PowerShell principal
     powershell.exe -ExecutionPolicy Bypass -File "C:\Users\jeferson.diaz\Documents\WindowsPowerShell\Scripts\orgvcd.ps1" @params
   vars:
-        ansible_user: "{{ansible_user}}"  # usuario Windows con permisos WinRM
-        ansible_password: "{{ansible_password}}"
-        ansible_connection: winrm
-        ansible_winrm_transport: basic
-        ansible_winrm_server_cert_validation: ignore
+    ansible_user: "{{ansible_user}}" # usuario Windows con permisos WinRM
+    ansible_password: "{{ansible_password}}"
+    ansible_connection: winrm
+    ansible_winrm_transport: basic
+    ansible_winrm_server_cert_validation: ignore
