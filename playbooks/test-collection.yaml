@@ -1,12 +1,6 @@
----
-- name: Verificar VMware collection
-  hosts: localhost
-  gather_facts: false
+- name: Probar conexión a Windows
+  hosts: win-builder
+  gather_facts: no
   tasks:
-    - name: Listar colecciones instaladas
-      ansible.builtin.command: ansible-galaxy collection list
-      register: result
-
-    - name: Mostrar resultado
-      ansible.builtin.debug:
-        var: result.stdout
+    - name: Ping WinRM
+      ansible.windows.win_ping:
