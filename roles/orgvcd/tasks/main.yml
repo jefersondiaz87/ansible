@@ -169,17 +169,11 @@
 # ===========================================================
 - name: Ejecutar script PowerCLI remoto con variables dinámicas
   delegate_to: win-builder
-  ansible_connection: winrm
-  ansible_winrm_transport: basic
-  ansible_winrm_server_cert_validation: ignore
-  vars:
-    ansible_user: "{{ hostvars['win-builder'].ansible_user }}"
-    ansible_password: "{{ hostvars['win-builder'].ansible_password }}"
   win_shell: |
     $params = @{
-      Server = "{{vcd.host}}"
-      Username = "{{vcd.user}}"
-      Password = "{{vcd.password}}"
+      Server = "{{ vcd.host }}"
+      Username = "{{ vcd.user }}"
+      Password = "{{ vcd.password }}"
       OrgName = "{{ vcd.orgFullName }}"
       VdcName = "{{ vcd.orgVdcName }}"
       ProvName = "{{ provider_match.name }}"
@@ -188,15 +182,8 @@
       CpuAllocation = {{ vcd.cpuQuota }}
       MemoryAllocation = {{ vcd.memoryQuota }}
       StorageAllocation = {{ vcd.storageQuota }}
-      Description = "Organización {{ orgFullName }} - creado por AWX"
+      Description = "Organización {{ vcd.orgFullName }} - creado por AWX"
       AllocationModel = "AllocationModel{{ allocation_model }}"
     }
 
-    # Pasar al script PowerShell principal
     powershell.exe -ExecutionPolicy Bypass -File "C:\Users\jeferson.diaz\Documents\WindowsPowerShell\Scripts\orgvcd.ps1" @params
-    vars:
-    ansible_user: "{{ansible_user}}" # usuario Windows con permisos WinRM
-    ansible_password: "{{ansible_password}}"
-    ansible_connection: winrm
-    ansible_winrm_transport: basic
-    ansible_winrm_server_cert_validation: ignore
