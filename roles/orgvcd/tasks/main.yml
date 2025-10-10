@@ -182,7 +182,7 @@
       MemoryAllocation = {{ vcd.memoryQuota }}
       StorageAllocation = {{ vcd.storageQuota }}
       Description = "Organización {{ orgFullName }} - creado por AWX"
-      AllocationModel = "{{ allocation_model }}"
+      AllocationModel = "AllocationModel{{ allocation_model }}"
     }
 
     # Pasar al script PowerShell principal
