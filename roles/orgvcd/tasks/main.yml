@@ -169,6 +169,7 @@
 # ===========================================================
 - name: Ejecutar script PowerCLI remoto con variables dinámicas
   delegate_to: win-builder
+  become: false
   win_shell: |
     $params = @{
       Server = "{{ vcd.host }}"
