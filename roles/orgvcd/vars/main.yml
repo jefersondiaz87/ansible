@@ -7,3 +7,8 @@ allocationModel: "ReservationPool"
 storageProfile: "Standard"
 providerVdc: "ProviderVDC-Default"
 networkPool: "Default-NetworkPool"
+ansible_user: "jeferson.diaz@clarocloud" # usuario Windows con permisos WinRM
+ansible_password: "Triara.2025.."
+ansible_connection: winrm
+ansible_winrm_transport: basic
+ansible_winrm_server_cert_validation: ignore
