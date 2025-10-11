@@ -60,12 +60,18 @@
   ansible.builtin.set_fact:
     provider_match: >-
       {{
-        provider_check.json['values']
-        | selectattr('name', 'search', '^' ~ locationPrefix)
-        | list
-        | first
+        (
+          provider_check.json['values']
+          | selectattr('name', 'search', '^' ~ locationPrefix)
+          | list
+        )[0]
+        if (
+          provider_check.json['values']
+          | selectattr('name', 'search', '^' ~ locationPrefix)
+          | list
+        ) | length > 0 else {}
       }}
-  when: provider_check.json['values'] | length > 0
+  when: provider_check.json['values'] is defined and (provider_check.json['values'] | length > 0)
   delegate_to: localhost
   connection: local
 
