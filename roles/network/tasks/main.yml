@@ -131,7 +131,7 @@
   ansible.builtin.assert:
     that:
       - edge_payload.edgeGatewayUplinks[0].subnets['values'] | length > 0
-      - edge_payload.orgVdcRef.id is defined
+      - edge_payload.orgVdc.id is defined
     fail_msg: "❌ El payload del Edge Gateway está incompleto o mal estructurado."
 
 # ===========================================================
