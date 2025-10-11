@@ -107,10 +107,31 @@
         | first
       }}
 
+
 # ===========================================================
-# CONSTRUIR PAYLOAD DEL EDGE GATEWAY
+# FILTRAR SUBNETS CON IPS LIBRES
 # ===========================================================
-- name: Construir payload del Edge Gateway
+- name: Filtrar subnets con IPs libres
+  set_fact:
+    free_uplink_subnets: >-
+      {{
+        uplink_subnets
+        | map('dict', key='values')  # asegurarse de que 'values' existe
+        | map('json_query', '[?usedIpCount < totalIpCount]')  # solo subnets con IPs disponibles
+        | select('length')  # eliminar listas vacías
+        | list
+      }}
+
+- name: Validar que hay subnets libres
+  assert:
+    that:
+      - free_uplink_subnets | length > 0
+    fail_msg: "❌ No hay subnets libres en la red externa {{ externalNetworkName }}."
+
+# ===========================================================
+# CONSTRUIR PAYLOAD DEL EDGE GATEWAY SOLO CON SUBNETS LIBRES
+# ===========================================================
+- name: Construir payload del Edge Gateway con subnets libres
   set_fact:
     edge_payload:
       name: "{{ edgeGatewayName }}"
@@ -121,21 +142,17 @@
         - uplinkId: "{{ extNetId }}"
           dedicated: false
           subnets:
-            values: "{{ uplink_subnets }}"
+            values: "{{ free_uplink_subnets | map('first') }}"  # tomar solo subnets con IPs libres
 
 - name: Validar estructura del payload antes de enviar
   assert:
     that:
-      - edge_payload.edgeGatewayUplinks[0].subnets is defined
-      - edge_payload.edgeGatewayUplinks[0].subnets['values'] is defined
-      - edge_payload.edgeGatewayUplinks[0].subnets['values'] is iterable
-      - edge_payload.orgVdc.id is defined
-
+      - edge_payload.edgeGatewayUplinks[0].subnets.values | length > 0
       - edge_payload.orgVdc.id is defined
     fail_msg: "❌ El payload del Edge Gateway está incompleto o mal estructurado."
 
 # ===========================================================
-# CREAR EDGE GATEWAY SI NO EXISTE
+# CREAR EDGE GATEWAY EN CLOUDAPI
 # ===========================================================
 - name: Crear Edge Gateway en VMware Cloud Director vía CloudAPI
   ansible.builtin.uri:
@@ -155,9 +172,10 @@
   ansible.builtin.debug:
     msg: "✅ Edge Gateway '{{ edgeGatewayName }}' creado correctamente con ID: {{ edge_create.json.id }}"
 
-- name: Guardar subnets con IPs asignadas automáticamente (simulación quickIpAllocation)
+- name: Guardar subnets con IPs asignadas automáticamente
   set_fact:
     edge_assigned_subnets: "{{ edge_create.json.edgeGatewayUplinks[0].subnets.values }}"
+
 
 # ===========================================================
 # OBTENER URN DEL EDGE GATEWAY
