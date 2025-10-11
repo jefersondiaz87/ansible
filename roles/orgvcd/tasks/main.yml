@@ -165,6 +165,24 @@
     msg: "⚙️ Modo de asignación seleccionado: {{ allocation_model }}"
 
 # ===========================================================
+# MOSTRAR VARIABLES DE ENTRADA
+# ===========================================================
+- name: Mostrar variables antes de ejecutar PowerCLI
+  ansible.builtin.debug:
+    msg:
+      - "📡 Servidor VCD: {{ vcd.host }}"
+      - "👤 Usuario: {{ vcd.user }}"
+      - "🏢 Organización: {{ vcd.orgFullName }}"
+      - "🏗️  Org VDC: {{ vcd.orgVdcName }}"
+      - "🌍 Provider VDC: {{ provider_match.name | default('No definido') }}"
+      - "💾 Storage Policy: {{ storage_match.name | default('No definido') }}"
+      - "🌐 Network Pool: {{ network_match.name | default('No definido') }}"
+      - "🧠 CPU Allocation: {{ vcd.cpuQuota }}"
+      - "💽 Memory Allocation: {{ vcd.memoryQuota }}"
+      - "📦 Storage Allocation: {{ vcd.storageQuota }}"
+      - "📝 Descripción: Organización {{ vcd.orgFullName }} - creado por AWX"
+
+# ===========================================================
 # 4️⃣ Ejecutar script PowerShell remoto
 # ===========================================================
 - name: Ejecutar script PowerCLI remoto con log
@@ -190,3 +208,13 @@
       -Description "Organización {{ orgFullName }} - creado por AWX"
   register: script_result
   delegate_to: win-builder
+
+# ===========================================================
+# MOSTRAR RESULTADO DE EJECUCIÓN
+# ===========================================================
+- name: Mostrar resultado del script PowerCLI
+  ansible.builtin.debug:
+    msg:
+      - "✅ Ejecución completada en PowerCLI"
+      - "📜 Salida:"
+      - "{{ script_result.stdout_lines }}"
