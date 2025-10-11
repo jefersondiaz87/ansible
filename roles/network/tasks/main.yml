@@ -59,7 +59,7 @@
   ansible.builtin.assert:
     that:
       - ext_net_lookup.json.resultTotal > 0
-    fail_msg: "❌ No se encontró la red externa '{{ extNetName }}'."
+    fail_msg: "❌ No se encontró la red externa '{{ externalNetworkName }}'."
 
 - name: Preparar subnets de la red externa
   set_fact:
