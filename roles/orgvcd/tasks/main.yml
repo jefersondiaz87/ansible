@@ -60,14 +60,15 @@
   ansible.builtin.set_fact:
     provider_match: >-
       {{
-        provider_check.json.values
+        provider_check.json['values']
         | selectattr('name', 'search', '^' ~ locationPrefix)
         | list
         | first
       }}
-  when: provider_check.json.values | length > 0
+  when: provider_check.json['values'] | length > 0
   delegate_to: localhost
   connection: local
+
 
 - name: Validar Provider VDC encontrado
   ansible.builtin.fail:
