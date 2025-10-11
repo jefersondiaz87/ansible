@@ -114,7 +114,7 @@
     edge_payload:
       name: "{{ edgeGatewayName }}"
       description: "Edge Gateway creado automáticamente por Ansible REST"
-      orgVdcRef:
+      orgVdc:
         id: "{{ org_vdc_id }}"
       edgeGatewayUplinks:
         - uplinkId: "{{ extNetId }}"
