@@ -55,44 +55,45 @@
     validate_certs: "{{ vcd.verify_ssl }}"
   register: ext_net_lookup
 
-- name: Validar que exista red externa
-  ansible.builtin.fail:
-    msg: "❌ No se encontró red externa con nombre '{{ externalNetworkName }}'"
-  when: ('values' not in ext_net_lookup.json) or (ext_net_lookup.json['values'] | length == 0)
+- name: Validar que se encontró la red externa
+  ansible.builtin.assert:
+    that:
+      - ext_net_lookup.json.resultTotal > 0
+    fail_msg: "❌ No se encontró la red externa '{{ extNetName }}'."
 
-- name: Guardar ID de la red externa
-  ansible.builtin.set_fact:
-    extNetId: "{{ ext_net_lookup.json['values'][0].id }}"
+- name: Preparar subnets de la red externa
+  set_fact:
+    uplink_subnets: >-
+      {{
+        ext_net_lookup.json['values'][0]['subnets']['values'] | map(
+          'combine', {'ipRanges': {'values': []}} ) | list
+      }}
+    extNetId: "{{ ext_net_lookup.json['values'][0]['id'] }}"
 
 - name: Mostrar red externa seleccionada
   ansible.builtin.debug:
     msg: "🌐 Red externa seleccionada: {{ externalNetworkName }} (ID: {{ extNetId }})"
 
 # ===========================================================
-# OBTENER DATOS DE LA RED EXTERNA PARA EDGE GATEWAY
+# CONSTRUIR PAYLOAD DEL EDGE GATEWAY
 # ===========================================================
-- name: Guardar datos de red externa para Edge Gateway
-  ansible.builtin.set_fact:
-    extNetId: "{{ ext_net_lookup.json['values'][0]['id'] }}"
-    subnet: "{{ ext_net_lookup.json['values'][0]['subnets']['values'][0] }}"
-    gateway_ip: "{{ subnet.gateway }}"
-    prefix_length: "{{ subnet.prefixLength }}"
-    start_ip: "{{ subnet.ipRanges['values'][0].startAddress }}"
-    end_ip: "{{ subnet.ipRanges['values'][0].endAddress }}"
-  delegate_to: localhost
-
-- name: Mostrar información de red calculada
-  ansible.builtin.debug:
-    msg:
-      - "🌐 Red externa seleccionada: {{ externalNetworkName }} (ID: {{ extNetId }})"
-      - "🔑 Gateway: {{ gateway_ip }}/{{ prefix_length }}"
-      - "📍 Rango de IPs: {{ start_ip }} - {{ end_ip }}"
+- name: Construir payload del Edge Gateway
+  set_fact:
+    edge_payload:
+      name: "{{ edgeGatewayName }}"
+      description: "Edge Gateway creado automáticamente por Ansible REST"
+      orgVdc:
+        id: "{{ vcd_orgVdcId }}"
+      edgeGatewayUplinks:
+        - uplinkId: "{{ extNetId }}"
+          dedicated: false
+          subnets:
+          values: "{{ uplink_subnets }}"
 
 # ===========================================================
 # CREAR EDGE GATEWAY SI NO EXISTE
 # ===========================================================
 - name: Crear Edge Gateway en VMware Cloud Director vía CloudAPI
-  when: not edge_exists
   ansible.builtin.uri:
     url: "{{ vcd.host }}/cloudapi/1.0.0/edgeGateways"
     method: POST
@@ -101,40 +102,18 @@
       Authorization: "Bearer {{ vcd.access_token }}"
       Content-Type: "application/json"
     body_format: json
-    body:
-      name: "{{ edgeGatewayName }}"
-      description: "Edge Gateway creado automáticamente por Ansible REST"
-      orgVdc:
-        id: "{{ vcd.orgVdcName }}"
-      edgeGatewayUplinks:
-        - uplinkName: "uplink1"
-          subnets:
-            values:
-              - gateway: "{{ gateway_ip }}"
-                prefixLength: "{{ prefix_length }}"
-                ipRanges:
-                  values:
-                    - startAddress: "{{ start_ip }}"
-                      endAddress: "{{ end_ip }}"
-                enabled: true
-      distributedRoutingEnabled: false
-      nonDistributedRoutingEnabled: true
-      haEnabled: false
-      advancedNetworkingEnabled: true
-      gatewayBacking:
-        backingId: "{{ extNetId }}"
-        networkProvider:
-          name: "{{ ext_net_lookup.json['values'][0]['networkBackings']['values'][0]['networkProvider']['name'] }}"
-          id: "{{ ext_net_lookup.json['values'][0]['networkBackings']['values'][0]['networkProvider']['id'] }}"
+    body: "{{ edge_payload }}"
     validate_certs: false
   register: edge_create
-  delegate_to: localhost
   failed_when: edge_create.status not in [200, 201, 202]
 
-- name: Confirmar creación del Edge Gateway
-  when: not edge_exists
+- name: Mostrar resultado de creación
   ansible.builtin.debug:
-    msg: "✅ Edge Gateway '{{ edgeGatewayName }}' creado correctamente."
+    msg: "✅ Edge Gateway '{{ edgeGatewayName }}' creado correctamente con ID: {{ edge_create.json.id }}"
+
+- name: Guardar subnets con IPs asignadas automáticamente (simulación quickIpAllocation)
+  set_fact:
+    edge_assigned_subnets: "{{ edge_create.json.edgeGatewayUplinks[0].subnets.values }}"
 
 # ===========================================================
 # OBTENER URN DEL EDGE GATEWAY
