@@ -69,6 +69,24 @@
     msg: "🌐 Red externa seleccionada: {{ externalNetworkName }} (ID: {{ extNetId }})"
 
 # ===========================================================
+# OBTENER DATOS DE LA RED EXTERNA PARA EDGE GATEWAY
+# ===========================================================
+- name: Guardar datos de red externa para Edge Gateway
+  ansible.builtin.set_fact:
+    gateway_ip: "{{ ext_net_lookup.json['values'][0]['subnets'][0]['gateway'] }}"
+    prefix_length: "{{ ext_net_lookup.json['values'][0]['subnets'][0]['prefixLength'] }}"
+    start_ip: "{{ ext_net_lookup.json['values'][0]['subnets'][0]['ipRanges']['values'][0]['startAddress'] }}"
+    end_ip: "{{ ext_net_lookup.json['values'][0]['subnets'][0]['ipRanges']['values'][0]['endAddress'] }}"
+  delegate_to: localhost
+
+- name: Mostrar información de red calculada
+  ansible.builtin.debug:
+    msg:
+      - "🌐 Gateway IP: {{ gateway_ip }}"
+      - "🔢 Prefix Length: {{ prefix_length }}"
+      - "📍 Rango IP: {{ start_ip }} - {{ end_ip }}"
+
+# ===========================================================
 # CREAR EDGE GATEWAY SI NO EXISTE
 # ===========================================================
 - name: Crear Edge Gateway en VMware Cloud Director vía CloudAPI
