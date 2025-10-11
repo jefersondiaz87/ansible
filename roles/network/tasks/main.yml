@@ -45,7 +45,6 @@
 # ===========================================================
 # OBTENER ID DE LA RED EXTERNA SEGÚN locationPrefix Y networkType
 # ===========================================================
-
 - name: Buscar red externa por nombre
   ansible.builtin.uri:
     url: "{{ vcd.host }}/cloudapi/1.0.0/externalNetworks?filter=name=={{ externalNetworkName }}"
@@ -59,11 +58,11 @@
 - name: Validar que exista red externa
   ansible.builtin.fail:
     msg: "❌ No se encontró red externa con nombre '{{ externalNetworkName }}'"
-  when: ext_net_lookup.json.values | length == 0
+  when: ('values' not in ext_net_lookup.json) or (ext_net_lookup.json['values'] | length == 0)
 
 - name: Guardar ID de la red externa
   ansible.builtin.set_fact:
-    extNetId: "{{ ext_net_lookup.json.values[0].id }}"
+    extNetId: "{{ ext_net_lookup.json['values'][0].id }}"
 
 - name: Mostrar red externa seleccionada
   ansible.builtin.debug:
@@ -86,7 +85,7 @@
       name: "{{ edgeGatewayName }}"
       description: "Edge Gateway creado automáticamente por Ansible REST"
       orgVdc:
-        id: "{{ vcd.orgVdcName}}"
+        id: "{{ vcd.orgVdcName }}"
       externalNetwork:
         id: "{{ extNetId }}"
       edgeGatewayType: "{{ vcd.networkType }}"
@@ -102,6 +101,9 @@
   ansible.builtin.debug:
     msg: "✅ Edge Gateway '{{ edgeGatewayName }}' creado correctamente."
 
+# ===========================================================
+# OBTENER URN DEL EDGE GATEWAY
+# ===========================================================
 - name: Obtener URN del Edge Gateway
   ansible.builtin.uri:
     url: "{{ vcd.host }}/cloudapi/1.0.0/edgeGateways?filter=name=={{ edgeGatewayName }}"
@@ -114,13 +116,13 @@
 
 - name: Guardar URN del Edge Gateway
   ansible.builtin.set_fact:
-    edge_urn: "{{ edge_query.json.values[0].id }}"
+    edge_urn: "{{ edge_query.json['values'][0].id if ('values' in edge_query.json and edge_query.json['values'] | length > 0) else '' }}"
 
 # ===========================================================
 # AGREGAR METADATA TRIALMODE (OPCIONAL)
 # ===========================================================
-# Asignar metadata TrialMode usando la API correcta
 - name: Asignar metadata TrialMode al Edge Gateway
+  when: edge_urn != ''
   ansible.builtin.uri:
     url: "{{ vcd.host }}/cloudapi/1.0.0/entities/{{ edge_urn }}/metadata"
     method: POST
@@ -138,5 +140,6 @@
   failed_when: metadata_update.status not in [200, 201, 202]
 
 - name: Confirmar metadata aplicada
+  when: edge_urn != ''
   ansible.builtin.debug:
     msg: "🟢 Metadata 'TrialMode={{ 'true' if trial else 'false' }}' aplicada correctamente al Edge Gateway '{{ edgeGatewayName }}'."
