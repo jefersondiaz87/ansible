@@ -29,7 +29,7 @@
 
 - name: Extraer ID de la organización
   ansible.builtin.set_fact:
-    org_id: "{{ org_check.json.values[0].id if (org_check.json.values | length > 0) else '' }}"
+    org_id: "{{ org_check.json['values'][0]['id'] if (org_check.json['values'] | length > 0) else '' }}"
   delegate_to: localhost
   connection: local
 
