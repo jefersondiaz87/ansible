@@ -86,8 +86,6 @@
       description: "Edge Gateway creado automáticamente por Ansible REST"
       orgVdc:
         id: "{{ vcd.orgVdcName }}"
-      externalNetwork:
-        id: "{{ extNetId }}"
       edgeGatewayType: "{{ vcd.networkType }}"
       haEnabled: false
       distributedRoutingEnabled: false
@@ -112,12 +110,41 @@
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
       Authorization: "Bearer {{ vcd.access_token }}"
+    validate_certs: false
     return_content: yes
   register: edge_query
 
 - name: Guardar URN del Edge Gateway
   ansible.builtin.set_fact:
     edge_urn: "{{ edge_query.json['values'][0].id if ('values' in edge_query.json and edge_query.json['values'] | length > 0) else '' }}"
+
+# ===========================================================
+# ASOCIAR RED EXTERNA AL EDGE GATEWAY
+# ===========================================================
+- name: Asociar red externa al Edge Gateway
+  when: edge_urn != ''
+  ansible.builtin.uri:
+    url: "{{ vcd.host }}/cloudapi/1.0.0/edgeGateways/{{ edge_urn }}/uplinks"
+    method: POST
+    headers:
+      Accept: "application/json;version={{ vcd.api_version }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "{{ externalNetworkName }}"
+      network:
+        id: "{{ extNetId }}"
+      type: "uplink"
+    validate_certs: false
+  register: uplink_create
+  delegate_to: localhost
+  failed_when: uplink_create.status not in [200, 201, 202]
+
+- name: Confirmar asociación de red externa
+  when: edge_urn != ''
+  ansible.builtin.debug:
+    msg: "🌐 Red externa '{{ externalNetworkName }}' asociada correctamente al Edge Gateway '{{ edgeGatewayName }}'."
 
 # ===========================================================
 # AGREGAR METADATA TRIALMODE (OPCIONAL)
@@ -136,6 +163,7 @@
       key: "TrialMode"
       value: "{{ trial | string | lower }}"
       type: "STRING"
+    validate_certs: false
   register: metadata_update
   delegate_to: localhost
   failed_when: metadata_update.status not in [200, 201, 202]
