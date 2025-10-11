@@ -15,18 +15,22 @@
 
 - name: Mostrar nombre calculado del Edge Gateway
   ansible.builtin.debug:
-    msg: "📡 Edge Gateway generado: {{ edgeGatewayName }}"
+    msg:
+      - "📍 locationPrefix: {{ locationPrefix }}"
+      - "📡 Edge Gateway generado: {{ edgeGatewayName }}"
+      - "🌐 External Network esperada: {{ externalNetworkName }}"
 
 # ===========================================================
-# VALIDAR SI EL EDGE GATEWAY YA EXISTE
+# VALIDAR SI EL EDGE GATEWAY YA EXISTE (USANDO CLOUDAPI)
 # ===========================================================
-- name: Validar si el Edge Gateway ya existe
+- name: Validar si el Edge Gateway ya existe (CloudAPI)
   ansible.builtin.uri:
-    url: "{{ vcd.host }}/api/query?type=edgeGateway&filter=name=={{ edgeGatewayName }}"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/edgeGateways?filter=name=={{ edgeGatewayName }}"
     method: GET
     headers:
-      Accept: "application/*+json;version={{ vcd.api_version }}"
+      Accept: "application/json;version={{ vcd.api_version }}"
       Authorization: "Bearer {{ vcd.access_token }}"
+    validate_certs: "{{ vcd.verify_ssl }}"
     return_content: yes
   register: edge_check
   delegate_to: localhost
@@ -34,11 +38,14 @@
 
 - name: Determinar si el Edge Gateway ya existe
   ansible.builtin.set_fact:
-    edge_exists: "{{ (edge_check.json.record is defined) and (edge_check.json.record | length > 0) }}"
+    edge_exists: "{{ (edge_check.json.values is defined) and (edge_check.json.values | length > 0) }}"
 
 - name: Mostrar estado del Edge Gateway
   ansible.builtin.debug:
-    msg: "💡 Edge Gateway '{{ edgeGatewayName }}' {{ 'ya existe' if edge_exists else 'no existe, se procederá a crear' }}."
+    msg:
+      - "💡 Edge Gateway buscado: {{ edgeGatewayName }}"
+      - "📋 Resultado CloudAPI: {{ edge_check.json.values | length }} encontrados"
+      - "🔍 Estado: {{ 'YA EXISTE ✅' if edge_exists else 'NO EXISTE 🚀 Se procederá a crear' }}"
 
 # ===========================================================
 # OBTENER ID DE LA RED EXTERNA SEGÚN locationPrefix Y networkType
