@@ -102,23 +102,38 @@
   register: orgvdc_status
   failed_when: orgvdc_status.status not in [200]
 
+- name: Inspeccionar estructura devuelta del Org VDC
+  ansible.builtin.debug:
+    var: orgvdc_status.json
+
+- name: Detectar estado del Org VDC (seguro ante cambios de esquema)
+  ansible.builtin.set_fact:
+    orgvdc_state: >-
+      {{
+        orgvdc_status.json.status
+        if 'status' in orgvdc_status.json
+        else (
+          orgvdc_status.json.state
+          if 'state' in orgvdc_status.json
+          else (
+            orgvdc_status.json.get('orgVdc', {}).get('status', 'UNKNOWN')
+          )
+        )
+      }}
+
 - name: Mostrar estado actual del Org VDC
   ansible.builtin.debug:
     msg:
       - "🏢 Org VDC: {{ vcd.orgVdcName }}"
-      - "🔎 Estado detectado: {{ orgvdc_status.json.status }}"
+      - "🔎 Estado detectado: {{ orgvdc_state }}"
 
 - name: Validar que el Org VDC está habilitado
   ansible.builtin.assert:
     that:
-      - orgvdc_status.json.status is defined
-      - orgvdc_status.json.status == "ENABLED"
-    fail_msg: "❌ El Org VDC '{{ vcd.orgVdcName }}' está deshabilitado. No se puede desplegar un Edge Gateway."
+      - orgvdc_state == "ENABLED"
+    fail_msg: "❌ El Org VDC '{{ vcd.orgVdcName }}' no está habilitado (estado: {{ orgvdc_state }}). No se puede desplegar un Edge Gateway."
     success_msg: "✅ El Org VDC '{{ vcd.orgVdcName }}' está habilitado y listo para desplegar Edge Gateway."
 
-- name: Mostrar confirmación
-  ansible.builtin.debug:
-    msg: "✅ ID guardado correctamente: {{ org_vdc_id }}"
 
 # ===========================================================
 # MOSTRAR Y SELECCIONAR SUBNET (modo vRO)
