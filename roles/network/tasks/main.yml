@@ -107,7 +107,6 @@
         | first
       }}
 
-
 # ===========================================================
 # FILTRAR SUBNETS CON IPS LIBRES
 # ===========================================================
@@ -116,12 +115,12 @@
     free_uplink_subnets: >-
       {{
         uplink_subnets
-        | map('dict', key='values')  # asegurarse de que 'values' existe
-        | map('json_query', '[?usedIpCount < totalIpCount]')  # solo subnets con IPs disponibles
-        | select('length')  # eliminar listas vacías
+        | map('dict', key='values')
+        | map('json_query', '[?usedIpCount < totalIpCount]')
+        | select('length')
         | list
       }}
-
+# Comentario: solo subnets con IPs disponibles
 - name: Validar que hay subnets libres
   assert:
     that:
@@ -142,7 +141,7 @@
         - uplinkId: "{{ extNetId }}"
           dedicated: false
           subnets:
-            values: "{{ free_uplink_subnets | map('first') }}"  # tomar solo subnets con IPs libres
+            values: "{{ free_uplink_subnets | map('first') }}" # tomar solo subnets con IPs libres
 
 - name: Validar estructura del payload antes de enviar
   assert:
@@ -175,7 +174,6 @@
 - name: Guardar subnets con IPs asignadas automáticamente
   set_fact:
     edge_assigned_subnets: "{{ edge_create.json.edgeGatewayUplinks[0].subnets.values }}"
-
 
 # ===========================================================
 # OBTENER URN DEL EDGE GATEWAY
