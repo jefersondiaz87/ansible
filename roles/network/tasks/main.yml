@@ -10,6 +10,7 @@
   ansible.builtin.set_fact:
     locationPrefix: "{{ vcd.orgVdcName.split('-')[0] }}"
     edgeGatewayName: "{{ locationPrefix }}-{{ vcd.orgFullName }}-{{ vcd.networkType }}"
+    externalNetworkName: "{{ locationPrefix }}-{{ vcd.networkType }}-01"
   delegate_to: localhost
 
 - name: Mostrar nombre calculado del Edge Gateway
@@ -40,36 +41,56 @@
     msg: "💡 Edge Gateway '{{ edgeGatewayName }}' {{ 'ya existe' if edge_exists else 'no existe, se procederá a crear' }}."
 
 # ===========================================================
+# OBTENER ID DE LA RED EXTERNA SEGÚN locationPrefix Y networkType
+# ===========================================================
+
+- name: Buscar red externa por nombre
+  ansible.builtin.uri:
+    url: "{{ vcd.host }}/cloudapi/1.0.0/externalNetworks?filter=name=={{ externalNetworkName }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ vcd.access_token }}"
+      Accept: "application/json;version={{ vcd.api_version }}"
+    validate_certs: "{{ vcd.verify_ssl }}"
+  register: ext_net_lookup
+
+- name: Validar que exista red externa
+  ansible.builtin.fail:
+    msg: "❌ No se encontró red externa con nombre '{{ externalNetworkName }}'"
+  when: ext_net_lookup.json.values | length == 0
+
+- name: Guardar ID de la red externa
+  ansible.builtin.set_fact:
+    extNetId: "{{ ext_net_lookup.json.values[0].id }}"
+
+- name: Mostrar red externa seleccionada
+  ansible.builtin.debug:
+    msg: "🌐 Red externa seleccionada: {{ externalNetworkName }} (ID: {{ extNetId }})"
+
+# ===========================================================
 # CREAR EDGE GATEWAY SI NO EXISTE
 # ===========================================================
-- name: Crear Edge Gateway en VMware Cloud Director vía REST
+- name: Crear Edge Gateway en VMware Cloud Director vía CloudAPI
   when: not edge_exists
   ansible.builtin.uri:
-    url: "{{ vcd.host }}/api/orgVdc/{{ vcd.orgVdcName }}/edgeGateways"
+    url: "{{ vcd.host }}/cloudapi/1.0.0/edgeGateways"
     method: POST
     headers:
-      Accept: "application/*+json;version={{ vcd.api_version }}"
+      Accept: "application/json;version={{ vcd.api_version }}"
       Authorization: "Bearer {{ vcd.access_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
       name: "{{ edgeGatewayName }}"
       description: "Edge Gateway creado automáticamente por Ansible REST"
-      configuration:
-        gatewayBackingConfig: "compact"
-        distributedRoutingEnabled: false
-        haEnabled: false
-        edgeGatewayUplinks:
-          - uplink:
-              name: "{{ externalNetwork | default('External-Network') }}"
-            subnets:
-              values:
-                - gateway: "{{ edge_gateway_ip | default('192.168.1.1') }}"
-                  prefixLength: 24
-      ownerRef:
-        name: "{{ vcd.orgVdcName }}"
-        type: "application/vnd.vmware.vcloud.vdc+xml"
-        id: "urn:vcloud:vdc:{{ vcd.orgVdcName }}"
+      orgVdc:
+        id: "{{ vcd.orgVdcName}}"
+      externalNetwork:
+        id: "{{ extNetId }}"
+      edgeGatewayType: "{{ vcd.networkType }}"
+      haEnabled: false
+      distributedRoutingEnabled: false
+      advancedNetworkingEnabled: true
   register: edge_create
   delegate_to: localhost
   failed_when: edge_create.status not in [200, 201, 202]
@@ -79,23 +100,37 @@
   ansible.builtin.debug:
     msg: "✅ Edge Gateway '{{ edgeGatewayName }}' creado correctamente."
 
+- name: Obtener URN del Edge Gateway
+  ansible.builtin.uri:
+    url: "{{ vcd.host }}/cloudapi/1.0.0/edgeGateways?filter=name=={{ edgeGatewayName }}"
+    method: GET
+    headers:
+      Accept: "application/json;version={{ vcd.api_version }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
+    return_content: yes
+  register: edge_query
+
+- name: Guardar URN del Edge Gateway
+  ansible.builtin.set_fact:
+    edge_urn: "{{ edge_query.json.values[0].id }}"
+
 # ===========================================================
 # AGREGAR METADATA TRIALMODE (OPCIONAL)
 # ===========================================================
+# Asignar metadata TrialMode usando la API correcta
 - name: Asignar metadata TrialMode al Edge Gateway
   ansible.builtin.uri:
-    url: "{{ vcd.host }}/api/edgeGateway/{{ edgeGatewayName }}/metadata"
-    method: PUT
+    url: "{{ vcd.host }}/cloudapi/1.0.0/entities/{{ edge_urn }}/metadata"
+    method: POST
     headers:
       Accept: "application/json;version={{ vcd.api_version }}"
       Authorization: "Bearer {{ vcd.access_token }}"
       Content-Type: "application/json"
     body_format: json
     body:
-      metadata:
-        - key: "TrialMode"
-          value: "{{ 'true' if trial else 'false' }}"
-          type: "STRING"
+      key: "TrialMode"
+      value: "{{ trial | string | lower }}"
+      type: "STRING"
   register: metadata_update
   delegate_to: localhost
   failed_when: metadata_update.status not in [200, 201, 202]
