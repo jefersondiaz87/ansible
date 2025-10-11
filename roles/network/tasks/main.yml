@@ -1,17 +1,10 @@
-# ===========================================================
-# ASEGURAR CONTEXTO GLOBAL DE VARIABLES VCD
-# ===========================================================
-- name: Propagar contexto VCD al localhost
-  set_fact:
-    vcd: "{{ vcd }}"
-  delegate_to: localhost
-
 # -----------------------------------------------------------
 # Construir el nombre del Edge Gateway igual que en vRO
 # -----------------------------------------------------------
 - name: Construir nombre del Edge Gateway
   set_fact:
-    locationPrefix: "{{ vcd.orgVdcName.split('-')[0] }}"
+    lprefix: "{{vcd.orgVcdName}}"
+    locationPrefix: "{{ lprefix.split('-')[0] }}"
     edgeGatewayName: "{{ locationPrefix }}-{{ vcd.orgFullName }}-{{ vcd.networkType }}"
     externalNetworkName: "{{ locationPrefix }}-{{ vcd.networkType }}-01"
 
