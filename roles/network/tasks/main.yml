@@ -106,10 +106,26 @@
       description: "Edge Gateway creado automáticamente por Ansible REST"
       orgVdc:
         id: "{{ vcd.orgVdcName }}"
-      edgeGatewayType: "{{ vcd.networkType }}"
-      haEnabled: false
+      edgeGatewayUplinks:
+        - uplinkName: "uplink1"
+          subnets:
+            values:
+              - gateway: "{{ gateway_ip }}"
+                prefixLength: "{{ prefix_length }}"
+                ipRanges:
+                  values:
+                    - startAddress: "{{ start_ip }}"
+                      endAddress: "{{ end_ip }}"
+                enabled: true
       distributedRoutingEnabled: false
+      nonDistributedRoutingEnabled: true
+      haEnabled: false
       advancedNetworkingEnabled: true
+      gatewayBacking:
+        backingId: "{{ extNetId }}"
+        networkProvider:
+          name: "{{ ext_net_lookup.json['values'][0]['networkBackings']['values'][0]['networkProvider']['name'] }}"
+          id: "{{ ext_net_lookup.json['values'][0]['networkBackings']['values'][0]['networkProvider']['id'] }}"
     validate_certs: false
   register: edge_create
   delegate_to: localhost
