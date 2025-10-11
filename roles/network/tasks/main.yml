@@ -96,7 +96,7 @@
   set_fact:
     org_vdc_id: >-
       {{
-        vdc_check.json.values
+        (vdc_check.json.values | default([]))
         | selectattr('name', 'equalto', vcd.orgVdcName)
         | map(attribute='id')
         | first
