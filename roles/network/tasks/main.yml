@@ -2,11 +2,11 @@
 # Construir el nombre del Edge Gateway igual que en vRO
 # -----------------------------------------------------------
 - name: Construir nombre del Edge Gateway
-  set_fact:
-    lprefix: "{{ vcd.orgVdcName }}"
-    locationPrefix: "{{ lprefix.split('-')[0] }}"
-    edgeGatewayName: "{{ locationPrefix }}-{{ vcd.orgFullName }}-{{ vcd.networkType }}"
-    externalNetworkName: "{{ locationPrefix }}-{{ vcd.networkType }}-01"
+  ansible.builtin.set_fact:
+    locationPrefix: "{{ vcd.orgVdcName.split('-')[0] }}"
+    edgeGatewayName: "{{ vcd.orgVdcName.split('-')[0] }}-{{ vcd.orgFullName }}-{{ vcd.networkType }}"
+    externalNetworkName: "{{ vcd.orgVdcName.split('-')[0] }}-{{ vcd.networkType }}-01"
+  delegate_to: localhost
 
 - name: Mostrar nombre calculado del Edge Gateway
   ansible.builtin.debug:
