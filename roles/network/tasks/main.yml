@@ -122,7 +122,7 @@
           dedicated: false
           subnets:
             values: "{{ free_uplink_subnets }}"
-      haEnabled: true
+      deploymentMode: "ACTIVE_STANDBY"
       distributedRoutingEnabled: false
       advancedNetworkingEnabled: true
       usingIpSpace: false
