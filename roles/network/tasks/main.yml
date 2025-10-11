@@ -92,11 +92,18 @@
   set_fact:
     vdc_exists: "{{ vdc_check.json['values'] | length > 0 }}"
 
+- name: Validar existencia del VDC antes de extraer ID
+  assert:
+    that:
+      - "'values' in vdc_check.json"
+      - "vdc_check.json['values'] | length > 0"
+    fail_msg: "❌ No se encontró ningún VDC con nombre '{{ vcd.orgVdcName }}'."
+
 - name: Guardar orgVdcId del VDC deseado
   set_fact:
     org_vdc_id: >-
       {{
-        vdc_check.json.values{}
+        vdc_check.json['values']
         | selectattr('name', 'equalto', vcd.orgVdcName)
         | map(attribute='id')
         | first
