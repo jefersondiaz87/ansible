@@ -103,10 +103,9 @@
         | selectattr('totalIpCount', 'defined')
         | selectattr('usedIpCount', 'defined')
         | selectattr('totalIpCount', '>', 0)
-        | selectattr('usedIpCount', '<', attribute='totalIpCount')
+        | select("expr", "item.usedIpCount < item.totalIpCount")
         | list
       }}
-
 - name: Mostrar subnets libres detectadas
   ansible.builtin.debug:
     msg:
