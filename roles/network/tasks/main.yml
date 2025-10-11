@@ -95,10 +95,30 @@
 # ===========================================================
 # FILTRAR SUBNETS CON IPs LIBRES
 # ===========================================================
-- name: Filtrar subnets con IPs libres
+- name: Filtrar subnets con IPs disponibles
   ansible.builtin.set_fact:
     free_uplink_subnets: >-
-      {{ uplink_subnets | json_query("[?usedIpCount < totalIpCount]") }}
+      {{
+        uplink_subnets
+        | selectattr('totalIpCount', 'defined')
+        | selectattr('usedIpCount', 'defined')
+        | selectattr('totalIpCount', '>', 0)
+        | selectattr('usedIpCount', '<', attribute='totalIpCount')
+        | list
+      }}
+
+- name: Mostrar subnets libres detectadas
+  ansible.builtin.debug:
+    msg:
+      - "🔎 Se encontraron {{ free_uplink_subnets | length }} subnets con IPs libres"
+      - "{{ free_uplink_subnets | to_nice_json }}"
+
+- name: Limpiar ipRanges en subnets libres
+  set_fact:
+    free_uplink_subnets: >-
+      {{
+        free_uplink_subnets | map('combine', {'ipRanges': {'values': []}}) | list
+      }}
 
 - name: Validar que hay subnets libres
   ansible.builtin.assert:
@@ -118,12 +138,9 @@
         id: "{{ org_vdc_id }}"
       edgeGatewayUplinks:
         - uplinkId: "{{ extNetId }}"
-          uplinkName: "{{ externalNetworkName }}"
-          dedicated: false
+          dedicated: "{{ 'false' if vcd.networkType == 'IO' else 'true' }}"
           subnets:
             values: "{{ free_uplink_subnets }}"
-      deploymentMode: "ACTIVE_STANDBY"
-      distributedRoutingEnabled: false
 
 - name: Validar estructura del payload antes de enviar
   ansible.builtin.assert:
