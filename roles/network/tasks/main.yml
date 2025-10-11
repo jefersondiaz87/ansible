@@ -1,5 +1,5 @@
 # ===========================================================
-# CONSTRUCCIÓN Y CREACIÓN DE EDGE GATEWAY (CloudAPI 1.0.0)
+# CREACIÓN DE EDGE GATEWAY (CloudAPI 1.0.0)
 # ===========================================================
 
 # -----------------------------------------------------------
@@ -92,41 +92,22 @@
   ansible.builtin.debug:
     msg: "✅ ID guardado correctamente: {{ org_vdc_id }}"
 
-## ===========================================================
-# FILTRAR SUBNETS CON IPs LIBRES (modo compatible universal)
 # ===========================================================
-- name: Filtrar subnets con IPs disponibles
-  ansible.builtin.set_fact:
-    free_uplink_subnets: >-
-      {{
-        uplink_subnets
-        | selectattr('totalIpCount', 'defined')
-        | selectattr('usedIpCount', 'defined')
-        | selectattr('totalIpCount', '>', 0)
-        | selectattr('usedIpCount', 'lt', 999999999)  
-        | list
-        | select('none') 
-        | list
-      }}
+# MOSTRAR Y SELECCIONAR SUBNET (modo vRO)
+# ===========================================================
+- name: Mostrar subnets detectadas
+  ansible.builtin.debug:
+    msg: "{{ uplink_subnets | to_nice_json }}"
 
-- name: Mostrar subnets libres detectadas
+- name: Tomar primera subnet de la red externa (como vRO)
+  ansible.builtin.set_fact:
+    free_uplink_subnets: "{{ [ uplink_subnets[0] | combine({'ipRanges': {'values': []}}) ] }}"
+
+- name: Mostrar subnet seleccionada para el Edge
   ansible.builtin.debug:
     msg:
-      - "🔎 Se encontraron {{ free_uplink_subnets | length }} subnets con IPs libres"
-      - "{{ free_uplink_subnets | to_nice_json }}"
-
-- name: Limpiar ipRanges en subnets libres
-  set_fact:
-    free_uplink_subnets: >-
-      {{
-        free_uplink_subnets | map('combine', {'ipRanges': {'values': []}}) | list
-      }}
-
-- name: Validar que hay subnets libres
-  ansible.builtin.assert:
-    that:
-      - free_uplink_subnets | length > 0
-    fail_msg: "❌ No hay subnets libres en {{ externalNetworkName }}."
+      - "🌐 Subnet usada: {{ free_uplink_subnets[0].gateway }} /{{ free_uplink_subnets[0].prefixLength }}"
+      - "🧹 Rango IP limpiado para asignación automática"
 
 # ===========================================================
 # CONSTRUIR PAYLOAD DEL EDGE GATEWAY (OpenAPI 1.0.0)
@@ -147,7 +128,7 @@
 - name: Validar estructura del payload antes de enviar
   ansible.builtin.assert:
     that:
-      - edge_payload.edgeGatewayUplinks[0].subnets['values'] | length > 0
+      - (edge_payload.edgeGatewayUplinks[0].subnets.values | default([])) | length > 0
       - edge_payload.orgVdc.id is defined
     fail_msg: "❌ El payload del Edge Gateway está incompleto o mal estructurado."
 
