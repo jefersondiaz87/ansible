@@ -115,10 +115,7 @@
     free_uplink_subnets: >-
       {{
         uplink_subnets
-        | map('dict', key='values')
-        | map('json_query', '[?usedIpCount < totalIpCount]')
-        | select('length')
-        | list
+        | json_query("[?usedIpCount < totalIpCount]")
       }}
 # Comentario: solo subnets con IPs disponibles
 - name: Validar que hay subnets libres
@@ -141,7 +138,7 @@
         - uplinkId: "{{ extNetId }}"
           dedicated: false
           subnets:
-            values: "{{ free_uplink_subnets | map('first') }}" # tomar solo subnets con IPs libres
+            values: "{{ free_uplink_subnets }}" # tomar solo subnets con IPs libres
 
 - name: Validar estructura del payload antes de enviar
   assert:
