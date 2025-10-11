@@ -3,7 +3,7 @@
 # -----------------------------------------------------------
 - name: Construir nombre del Edge Gateway
   set_fact:
-    lprefix: "{{vcd.orgVdcName}}"
+    lprefix: "{{ vcd.orgVdcName }}"
     locationPrefix: "{{ lprefix.split('-')[0] }}"
     edgeGatewayName: "{{ locationPrefix }}-{{ vcd.orgFullName }}-{{ vcd.networkType }}"
     externalNetworkName: "{{ locationPrefix }}-{{ vcd.networkType }}-01"
