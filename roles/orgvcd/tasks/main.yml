@@ -18,6 +18,8 @@
     return_content: yes
     validate_certs: false
   register: org_check
+  delegate_to: localhost
+  connection: local
 
 - name: Extraer ID de la organización
   set_fact:
@@ -42,6 +44,8 @@
     return_content: yes
     validate_certs: false
   register: provider_check
+  delegate_to: localhost
+  connection: local
 
 - name: Buscar Provider VDC por prefijo regional
   set_fact:
@@ -72,6 +76,8 @@
     return_content: yes
     validate_certs: false
   register: network_check
+  delegate_to: localhost
+  connection: local
 
 - name: Buscar Network Pool por NSX Manager del Provider
   set_fact:
@@ -103,6 +109,8 @@
     return_content: yes
     validate_certs: false
   register: storage_check
+  delegate_to: localhost
+  connection: local
 
 - name: Buscar Storage Policy por Provider VDC
   set_fact:
@@ -143,6 +151,8 @@
     return_content: yes
     validate_certs: false
   register: vdc_check
+  delegate_to: localhost
+  connection: local
 
 - name: Determinar si el Org VDC ya existe
   set_fact:
