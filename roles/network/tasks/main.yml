@@ -75,6 +75,34 @@
     msg: "🌐 Red externa seleccionada: {{ externalNetworkName }} (ID: {{ extNetId }})"
 
 # ===========================================================
+# VALIDAR EXISTENCIA DEL ORG VDC
+# ===========================================================
+- name: Verificar si el Org VDC ya existe por nombre
+  uri:
+    url: "{{ vcd.host }}/cloudapi/1.0.0/vdcs?filter=name=={{ vcd.orgVdcName }}"
+    method: GET
+    headers:
+      Accept: "application/json;version={{ vcd.api_version }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
+    return_content: yes
+    validate_certs: false
+  register: vdc_check
+
+- name: Determinar si el Org VDC ya existe
+  set_fact:
+    vdc_exists: "{{ vdc_check.json.values | length > 0 }}"
+
+- name: Guardar orgVdcId del VDC deseado
+  set_fact:
+    org_vdc_id: >-
+      {{
+        vdc_check.json.values
+        | selectattr('name', 'equalto', vcd.orgVdcName)
+        | map(attribute='id')
+        | first
+      }}
+
+# ===========================================================
 # CONSTRUIR PAYLOAD DEL EDGE GATEWAY
 # ===========================================================
 - name: Construir payload del Edge Gateway
@@ -83,7 +111,7 @@
       name: "{{ edgeGatewayName }}"
       description: "Edge Gateway creado automáticamente por Ansible REST"
       orgVdc:
-        id: "{{ vcd_orgVdcId }}"
+        id: "{{ org_vdc_id }}"
       edgeGatewayUplinks:
         - uplinkId: "{{ extNetId }}"
           dedicated: false
