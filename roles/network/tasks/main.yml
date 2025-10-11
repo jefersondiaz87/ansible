@@ -39,7 +39,7 @@
   ansible.builtin.debug:
     msg:
       - "💡 Edge Gateway buscado: {{ edgeGatewayName }}"
-      - "📋 Resultado CloudAPI: {{ edge_check.json.values | length }} encontrados"
+      - "📋 Resultado CloudAPI: {{ (edge_check.json['values'] | length) if ('values' in edge_check.json) else 0 }} encontrados"
       - "🔍 Estado: {{ 'YA EXISTE ✅' if edge_exists else 'NO EXISTE 🚀 Se procederá a crear' }}"
 
 # ===========================================================
