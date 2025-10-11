@@ -63,11 +63,7 @@
 
 - name: Preparar subnets de la red externa
   set_fact:
-    uplink_subnets: >-
-      {{
-        ext_net_lookup.json['values'][0]['subnets']['values'] | map(
-          'combine', {'ipRanges': {'values': []}} ) | list
-      }}
+    uplink_subnets: "{{ ext_net_lookup.json['values'][0]['subnets']['values'] }}"
     extNetId: "{{ ext_net_lookup.json['values'][0]['id'] }}"
 
 - name: Mostrar red externa seleccionada
