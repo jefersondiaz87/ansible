@@ -124,7 +124,6 @@
             values: "{{ free_uplink_subnets }}"
       deploymentMode: "ACTIVE_STANDBY"
       distributedRoutingEnabled: false
-      usingIpSpace: false
 
 - name: Validar estructura del payload antes de enviar
   ansible.builtin.assert:
