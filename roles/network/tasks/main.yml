@@ -123,7 +123,15 @@
         - uplinkId: "{{ extNetId }}"
           dedicated: false
           subnets:
-          values: "{{ uplink_subnets }}"
+            values: "{{ uplink_subnets }}"
+
+- name: Validar estructura del payload antes de enviar
+  assert:
+    that:
+      - edge_payload.edgeGatewayUplinks[0].subnets is defined
+      - edge_payload.edgeGatewayUplinks[0].subnets.values is iterable
+      - edge_payload.orgVdc.id is defined
+    fail_msg: "❌ El payload del Edge Gateway está incompleto o mal estructurado."
 
 # ===========================================================
 # CREAR EDGE GATEWAY SI NO EXISTE
