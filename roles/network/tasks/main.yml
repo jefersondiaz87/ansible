@@ -73,18 +73,20 @@
 # ===========================================================
 - name: Guardar datos de red externa para Edge Gateway
   ansible.builtin.set_fact:
-    gateway_ip: "{{ ext_net_lookup.json['values'][0]['subnets'][0]['gateway'] }}"
-    prefix_length: "{{ ext_net_lookup.json['values'][0]['subnets'][0]['prefixLength'] }}"
-    start_ip: "{{ ext_net_lookup.json['values'][0]['subnets'][0]['ipRanges']['values'][0]['startAddress'] }}"
-    end_ip: "{{ ext_net_lookup.json['values'][0]['subnets'][0]['ipRanges']['values'][0]['endAddress'] }}"
+    extNetId: "{{ ext_net_lookup.json['values'][0]['id'] }}"
+    subnet: "{{ ext_net_lookup.json['values'][0]['subnets']['values'][0] }}"
+    gateway_ip: "{{ subnet.gateway }}"
+    prefix_length: "{{ subnet.prefixLength }}"
+    start_ip: "{{ subnet.ipRanges['values'][0].startAddress }}"
+    end_ip: "{{ subnet.ipRanges['values'][0].endAddress }}"
   delegate_to: localhost
 
 - name: Mostrar información de red calculada
   ansible.builtin.debug:
     msg:
-      - "🌐 Gateway IP: {{ gateway_ip }}"
-      - "🔢 Prefix Length: {{ prefix_length }}"
-      - "📍 Rango IP: {{ start_ip }} - {{ end_ip }}"
+      - "🌐 Red externa seleccionada: {{ externalNetworkName }} (ID: {{ extNetId }})"
+      - "🔑 Gateway: {{ gateway_ip }}/{{ prefix_length }}"
+      - "📍 Rango de IPs: {{ start_ip }} - {{ end_ip }}"
 
 # ===========================================================
 # CREAR EDGE GATEWAY SI NO EXISTE
