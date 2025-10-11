@@ -87,7 +87,11 @@
   ansible.builtin.set_fact:
     org_vdc_id: "{{ vdc_check.json['values'][0]['id'] }}"
   when: vdc_check.json['values'] | length > 0
-  msg: -"Id org_vdc_id {{ org_vdc_id }}"
+
+- name: Mostrar confirmación
+  ansible.builtin.debug:
+    msg: "✅ ID guardado correctamente: {{ orgVdcId }}"
+
 # ===========================================================
 # FILTRAR SUBNETS CON IPs LIBRES
 # ===========================================================
