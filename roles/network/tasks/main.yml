@@ -72,7 +72,9 @@
 
 - name: Mostrar red externa seleccionada
   ansible.builtin.debug:
-    msg: "🌐 Red externa seleccionada: {{ externalNetworkName }} (ID: {{ extNetId }})"
+    msg:
+      - "🌐 Red externa seleccionada: {{ externalNetworkName }} (ID: {{ extNetId }})"
+      - "🌐 Datos extraidos: {{ uplink_subnets }}"
 
 # ===========================================================
 # VALIDAR EXISTENCIA DEL ORG VDC
