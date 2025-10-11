@@ -105,7 +105,8 @@
         | selectattr('totalIpCount', '>', 0)
         | selectattr('usedIpCount', 'lt', 999999999)  
         | list
-        | select('none') | list  # solo para evitar bug
+        | select('none') 
+        | list
       }}
 
 - name: Mostrar subnets libres detectadas
