@@ -92,6 +92,7 @@
       haEnabled: false
       distributedRoutingEnabled: false
       advancedNetworkingEnabled: true
+      validate_certs: false
   register: edge_create
   delegate_to: localhost
   failed_when: edge_create.status not in [200, 201, 202]
