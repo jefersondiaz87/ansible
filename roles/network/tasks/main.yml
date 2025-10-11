@@ -138,7 +138,7 @@
         - uplinkId: "{{ extNetId }}"
           dedicated: false
           subnets:
-            values: "{{ free_uplink_subnets }}" # tomar solo subnets con IPs libres
+            values: [] # tomar solo subnets con IPs libres
 
 - name: Validar estructura del payload antes de enviar
   assert:
