@@ -90,7 +90,7 @@
 
 - name: Determinar si el Org VDC ya existe
   set_fact:
-    vdc_exists: "{{ vdc_check.json.values | length > 0 }}"
+    vdc_exists: "{{ vdc_check.json['values'] | length > 0 }}"
 
 - name: Guardar orgVdcId del VDC deseado
   set_fact:
