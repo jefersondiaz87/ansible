@@ -33,7 +33,7 @@
 
 - name: Determinar si el Edge Gateway ya existe
   ansible.builtin.set_fact:
-    edge_exists: "{{ (edge_check.json.values is defined) and (edge_check.json.values | length > 0) }}"
+    edge_exists: "{{ ('values' in edge_check.json) and (edge_check.json['values'] | length > 0) }}"
 
 - name: Mostrar estado del Edge Gateway
   ansible.builtin.debug:
