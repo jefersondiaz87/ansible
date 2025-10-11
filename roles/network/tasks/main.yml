@@ -90,7 +90,7 @@
 
 - name: Mostrar confirmación
   ansible.builtin.debug:
-    msg: "✅ ID guardado correctamente: {{ org_Vdc_Id }}"
+    msg: "✅ ID guardado correctamente: {{ org_vdc_id }}"
 
 # ===========================================================
 # FILTRAR SUBNETS CON IPs LIBRES
