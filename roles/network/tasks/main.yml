@@ -88,6 +88,34 @@
     org_vdc_id: "{{ vdc_check.json['values'][0]['id'] }}"
   when: vdc_check.json['values'] | length > 0
 
+# ===========================================================
+# VALIDAR ESTADO DEL ORG VDC (Debe estar ENABLED)
+# ===========================================================
+- name: Consultar estado del Org VDC
+  ansible.builtin.uri:
+    url: "{{ vcd.host }}/cloudapi/1.0.0/vdcs/{{ org_vdc_id }}"
+    method: GET
+    headers:
+      Accept: "application/json;version={{ vcd.api_version }}"
+      Authorization: "Bearer {{ vcd.access_token }}"
+    validate_certs: "{{ vcd.verify_ssl }}"
+  register: orgvdc_status
+  failed_when: orgvdc_status.status not in [200]
+
+- name: Mostrar estado actual del Org VDC
+  ansible.builtin.debug:
+    msg:
+      - "🏢 Org VDC: {{ vcd.orgVdcName }}"
+      - "🔎 Estado detectado: {{ orgvdc_status.json.status }}"
+
+- name: Validar que el Org VDC está habilitado
+  ansible.builtin.assert:
+    that:
+      - orgvdc_status.json.status is defined
+      - orgvdc_status.json.status == "ENABLED"
+    fail_msg: "❌ El Org VDC '{{ vcd.orgVdcName }}' está deshabilitado. No se puede desplegar un Edge Gateway."
+    success_msg: "✅ El Org VDC '{{ vcd.orgVdcName }}' está habilitado y listo para desplegar Edge Gateway."
+
 - name: Mostrar confirmación
   ansible.builtin.debug:
     msg: "✅ ID guardado correctamente: {{ org_vdc_id }}"
