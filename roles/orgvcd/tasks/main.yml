@@ -97,13 +97,13 @@
   ansible.builtin.set_fact:
     network_match: >-
       {{
-        network_check.json.values
+        network_check.json['values']
         | selectattr('managingOwnerRef.name', 'equalto', provider_match.nsxTManager.name)
         | selectattr('name', 'search', locationPrefix)
         | list
         | first
       }}
-  when: network_check.json.values | length > 0
+  when: network_check.json['values'] | length > 0
   delegate_to: localhost
   connection: local
 
