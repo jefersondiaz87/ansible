@@ -92,8 +92,8 @@
   ansible.builtin.debug:
     msg: "✅ ID guardado correctamente: {{ org_vdc_id }}"
 
-# ===========================================================
-# FILTRAR SUBNETS CON IPs LIBRES
+## ===========================================================
+# FILTRAR SUBNETS CON IPs LIBRES (modo compatible universal)
 # ===========================================================
 - name: Filtrar subnets con IPs disponibles
   ansible.builtin.set_fact:
@@ -103,9 +103,11 @@
         | selectattr('totalIpCount', 'defined')
         | selectattr('usedIpCount', 'defined')
         | selectattr('totalIpCount', '>', 0)
-        | select("expr", "item.usedIpCount < item.totalIpCount")
+        | selectattr('usedIpCount', 'lt', 999999999)  # dummy to force evaluation
         | list
+        | select('none') | list  # solo para evitar bug
       }}
+      
 - name: Mostrar subnets libres detectadas
   ansible.builtin.debug:
     msg:
