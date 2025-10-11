@@ -69,7 +69,6 @@
   delegate_to: localhost
   connection: local
 
-
 - name: Validar Provider VDC encontrado
   ansible.builtin.fail:
     msg: "❌ No se encontró ningún Provider VDC que comience con '{{ locationPrefix }}'."
@@ -97,11 +96,18 @@
   ansible.builtin.set_fact:
     network_match: >-
       {{
-        network_check.json['values']
-        | selectattr('managingOwnerRef.name', 'equalto', provider_match.nsxTManager.name)
-        | selectattr('name', 'search', locationPrefix)
-        | list
-        | first
+        (
+          network_check.json['values']
+          | selectattr('managingOwnerRef.name', 'equalto', provider_match.nsxTManager.name)
+          | selectattr('name', 'search', locationPrefix)
+          | list
+        )[0]
+        if (
+          network_check.json['values']
+          | selectattr('managingOwnerRef.name', 'equalto', provider_match.nsxTManager.name)
+          | selectattr('name', 'search', locationPrefix)
+          | list
+        ) | length > 0 else {}
       }}
   when: network_check.json['values'] | length > 0
   delegate_to: localhost
@@ -109,10 +115,10 @@
 
 - name: Validar Network Pool encontrado
   ansible.builtin.fail:
-    msg: "❌ No se encontró ningún Network Pool asociado al NSX Manager '{{ provider_match.nsxTManager.name }}'."
-  when: network_match is not defined
-  delegate_to: localhost
-  connection: local
+    msg: >-
+      ❌ No se encontró ningún Network Pool asociado al NSX Manager
+      '{{ provider_match.nsxTManager.name }}' con prefijo '{{ locationPrefix }}'.
+  when: network_match == {}
 
 # ===========================================================
 # STORAGE PROFILE asociado al Provider VDC
