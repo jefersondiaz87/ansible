@@ -87,7 +87,7 @@
   ansible.builtin.set_fact:
     org_vdc_id: "{{ vdc_check.json['values'][0]['id'] }}"
   when: vdc_check.json['values'] | length > 0
-
+  msg: -"Id org_vdc_id {{ org_vdc_id }}"
 # ===========================================================
 # FILTRAR SUBNETS CON IPs LIBRES
 # ===========================================================
@@ -129,7 +129,6 @@
       - edge_payload.edgeGatewayUplinks[0].subnets['values'] | length > 0
       - edge_payload.orgVdc.id is defined
     fail_msg: "❌ El payload del Edge Gateway está incompleto o mal estructurado."
-
 
 # ===========================================================
 # CREAR EDGE GATEWAY
