@@ -144,12 +144,12 @@
   ansible.builtin.set_fact:
     storage_match: >-
       {{
-        storage_check.json.values
+        storage_check.json['values']
         | selectattr('providerVdcRef.name', 'equalto', provider_match.name)
         | list
         | first
       }}
-  when: storage_check.json.values | length > 0
+  when: storage_check.json['values'] | length > 0
   delegate_to: localhost
   connection: local
 
