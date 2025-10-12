@@ -98,20 +98,18 @@
   delegate_to: localhost
   connection: local
 
-- name: Buscar Network Pool por NSX Manager del Provider
+- name: Buscar Network Pool por prefijo regional
   ansible.builtin.set_fact:
     network_match: >-
       {{
         (
           network_check.json['values']
-          | selectattr('managingOwnerRef.name', 'equalto', provider_match.nsxTManager.name)
-          | selectattr('name', 'search', locationPrefix)
+          | selectattr('name', 'search', '^' ~ locationPrefix)
           | list
         )[0]
         if (
           network_check.json['values']
-          | selectattr('managingOwnerRef.name', 'equalto', provider_match.nsxTManager.name)
-          | selectattr('name', 'search', locationPrefix)
+          | selectattr('name', 'search', '^' ~ locationPrefix)
           | list
         ) | length > 0 else {}
       }}
