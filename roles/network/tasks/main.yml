@@ -85,8 +85,8 @@
         ansible_connection: winrm
         ansible_host: "100.66.2.151"
         ansible_port: 5985
-        ansible_user: "jeferson diaz"
-        ansible_password: "Zero.eg9olj12*"
+        ansible_user: "jeferson.diaz"
+        ansible_password: "Triara.2025.."
         ansible_winrm_transport: basic
         ansible_winrm_server_cert_validation: ignore
       register: edge_result
@@ -156,8 +156,8 @@
         ansible_connection: winrm
         ansible_host: "100.66.2.151"
         ansible_port: 5985
-        ansible_user: "jeferson diaz"
-        ansible_password: "Zero.eg9olj12*"
+        ansible_user: "jeferson.diaz"
+        ansible_password: "Triara.2025.."
         ansible_winrm_transport: basic
         ansible_winrm_server_cert_validation: ignore
       # Solo se ejecuta el borrado si se logró extraer el EDGE_ID, lo que indica que la creación SÍ comenzó.
