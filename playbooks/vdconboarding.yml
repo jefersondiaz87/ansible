@@ -16,17 +16,17 @@
     vcd_metadata: "{{ lookup('env', 'VCD_METADATA_JSON') | from_json }}" # Asegúrate de tener este valor en credenciales
 
     # 📦 Datos dinámicos — enviados desde survey o extra_vars
-    orgFullName: "{{ orgFullName }}"
-    orgVdcName: "{{ orgVdcName }}"
-    cpuQuota: "{{ cpuQuota }}"
-    memoryQuota: "{{ memoryQuota }}"
-    storageQuota: "{{ storageQuota }}"
-    mail: "{{ mail }}"
-    firstName: "{{ firstName }}"
-    lastName: "{{ lastName }}"
-    networkType: "{{ networkType }}"
-    trial: "{{ trial | default(false) }}"
-    vmQuota: "2"
+    #orgFullName: "{{ orgFullName }}"
+    #orgVdcName: "{{ orgVdcName }}"
+    #cpuQuota: "{{ cpuQuota }}"
+    #memoryQuota: "{{ memoryQuota }}"
+    #storageQuota: "{{ storageQuota }}"
+    #mail: "{{ mail }}"
+    #firstName: "{{ firstName }}"
+    #lastName: "{{ lastName }}"
+    #networkType: "{{ networkType }}"
+    #trial: "{{ trial | default(false) }}"
+    #vmQuota: "2"
 
   tasks:
     # =======================================
