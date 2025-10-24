@@ -107,37 +107,6 @@
       when: edge_id == ''
       delegate_to: localhost
 
-    - name: 2.10 Separar UPLINK_INFO en variables individuales
-      ansible.builtin.set_fact:
-        uplink_name: "{{ uplink_info_raw.split(';')[0] }}"
-        gateway: "{{ uplink_info_raw.split(';')[1] }}"
-        start_ip: "{{ uplink_info_raw.split(';')[2] }}"
-        end_ip: "{{ uplink_info_raw.split(';')[3] }}"
-      when: uplink_info_raw != ''
-      delegate_to: localhost
-
-    - name: 2.11 Mostrar variables de red extraídas
-      ansible.builtin.debug:
-        msg:
-          - "✅ EDGE_ID: {{ edge_id }}"
-          - "UPLINK_INFO: {{ uplink_info_raw }}"
-          - "Gateway IP: {{ gateway | default('N/A') }}"
-      delegate_to: localhost
-
-    # -----------------------------------------------------------
-    # TAREAS ADICIONALES DE RED (Configuración de NAT, Firewall)
-    # Si estas fallan, se activará el rescue.
-    # -----------------------------------------------------------
-    - name: 2.12 Configurar reglas NAT básicas (Ejemplo - requiere script o módulo)
-      ansible.builtin.debug:
-        msg: "Configurando reglas NAT básicas en Edge '{{ edgeGatewayName }}' (Tarea Dummy)"
-      delegate_to: localhost
-
-    - name: 2.13 Configurar reglas de Firewall por defecto (Ejemplo - requiere script o módulo)
-      ansible.builtin.debug:
-        msg: "Configurando reglas de Firewall por defecto en Edge '{{ edgeGatewayName }}' (Tarea Dummy)"
-      delegate_to: localhost
-
   # -----------------------------------------------------------
   # SECCIÓN DE RESCATE (ROLLBACK EDGE)
   # Se ejecuta si cualquier tarea en el 'block' falla.
@@ -151,12 +120,12 @@
 
     - name: 3.1 Eliminar Edge Gateway usando PowerCLI (SI LA CREACIÓN SE INICIÓ)
       ansible.builtin.win_shell: >
-        & 'C:\Users\jeferson.diaz\Documents\WindowsPowerShell\Scripts\delete_edge.ps1' -OrgVdcName '{{ vcd.orgVdcName }}' -EdgeName '{{ edgeGatewayName }}' -Server '{{ vcd.host }}' -Username '{{ vcd.user }}' -Password '{{ vcd.password }}'
+        & 'C:\Users\jeferson.diaz\Documents\WindowsPowerShell\Scripts\delete_edge.ps1' -OrgVdcName '{{ vcd.orgVdcName }}' -EdgeName '{{ edge_id }}' -Server '{{ vcd.host }}' -Username '{{ vcd.user }}' -Password '{{ vcd.password }}'
       vars:
         ansible_connection: winrm
-        ansible_host: "100.66.2.151"
+        ansible_host: "10.10.201.250"
         ansible_port: 5985
-        ansible_user: "jeferson.diaz"
+        ansible_user: "clarocloud\\jeferson.diaz"
         ansible_password: "Triara.2025.."
         ansible_winrm_transport: basic
         ansible_winrm_server_cert_validation: ignore

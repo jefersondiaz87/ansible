@@ -290,7 +290,7 @@
         & 'C:\Users\jeferson.diaz\Documents\WindowsPowerShell\Scripts\delete_orgvdc.ps1' -VdcId '{{ created_vdc_id }}' -Server '{{ vcd.host }}' -Username '{{ vcd.user }}' -Password '{{ vcd.password }}'
       vars:
         ansible_connection: winrm
-        ansible_host: "100.66.2.151"
+        ansible_host: "10.10.201.250"
         ansible_port: 5985
         ansible_user: "jeferson.diaz"
         ansible_password: "Triara.2025.."
