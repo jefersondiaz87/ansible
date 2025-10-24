@@ -14,7 +14,7 @@
     vcd_api_version: "{{ lookup('env', 'VCD_API_VERSION') | default('39.1') }}"
     vcd_apikey: "{{ lookup('env', 'VCD_TOKEN') }}"
     vcd_metadata: "{{ lookup('env', 'VCD_METADATA_JSON') | from_json }}" # Asegúrate de tener este valor en credenciales
-
+    vmQuota: "2"
     # 📦 Datos dinámicos — enviados desde survey o extra_vars
     #orgFullName: "{{ orgFullName }}"
     #orgVdcName: "{{ orgVdcName }}"
