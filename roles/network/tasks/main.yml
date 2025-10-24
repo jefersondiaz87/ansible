@@ -97,7 +97,7 @@
       ansible.builtin.win_shell: |
         Write-Host "=== Iniciando creación de Edge Gateway (PowerCLI 13.3) ==="
         pwsh.exe -ExecutionPolicy Bypass -File "D:\Users\Jeferson Diaz\Documents\g6\Ansible\networkedge.ps1" `
-          -Server "{{ vcd.host }}" `
+          -Server "https://vcd-lab.clarocloud.com" `
           -Username "{{ vcd.user }}" `
           -Password "{{ vcd.password }}" `
           -OrgVdcName "{{ vcd.orgVdcName }}" `
@@ -145,14 +145,15 @@
 
     - name: 3.1 Eliminar Edge Gateway usando PowerCLI (SI LA CREACIÓN SE INICIÓ)
       ansible.builtin.win_shell: >
-        & 'C:\Users\jeferson.diaz\Documents\WindowsPowerShell\Scripts\delete_edge.ps1' -OrgVdcName '{{ vcd.orgVdcName }}' -EdgeName '{{ edge_id }}' -Server '{{ vcd.host }}' -Username '{{ vcd.user }}' -Password '{{ vcd.password }}'
+        & 'D:\Users\Jeferson Diaz\Documents\g6\Ansible\delete_edge.ps1' -OrgVdcName '{{ vcd.orgVdcName }}' -EdgeName '{{ edge_id }}' -Server 'https://vcd-lab.clarocloud.com' -Username '{{ vcd.user }}' -Password '{{ vcd.password }}'
       vars:
         ansible_connection: winrm
-        ansible_host: "10.10.201.250"
-        ansible_port: 5985
-        ansible_user: "clarocloud\\jeferson.diaz"
-        ansible_password: "Triara.2025.."
+        ansible_host: "unmotherly-unchipped-kenda.ngrok-free.dev"
+        ansible_port: 443
+        ansible_user: "jeferson diaz"
+        ansible_password: "Zero.eg9olj12*"
         ansible_winrm_transport: basic
+        ansible_winrm_scheme: https
         ansible_winrm_server_cert_validation: ignore
       # Solo se ejecuta el borrado si se logró extraer el EDGE_ID, lo que indica que la creación SÍ comenzó.
       when: edge_id is defined and edge_id != ''

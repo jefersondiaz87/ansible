@@ -242,7 +242,7 @@
 
     - name: Ejecutar PowerCLI en Windows (Crea el Org VDC y aplica Metadatos)
       ansible.builtin.win_shell: >
-        & 'D:\Users\Jeferson Diaz\Documents\g6\Ansible\orgvcd.ps1' -AllocationModel '{{allocation_model | trim}}' -Server '{{ vcd.host }}' -Username '{{ vcd.user }}' -Password '{{ vcd.password }}' -OrgName '{{ vcd.orgFullName }}' -VdcName '{{ vcd.orgVdcName }}' -ProvName '{{ provider_match.name | default('') }}' -CpName '{{ compute_match.name | default('') }}' -SpName '{{ storage_match.name | default('') }}' -NpName '{{ network_match.name | default('') }}' -CpuAllocation {{ vcd.cpuQuota | trim }} -MemoryAllocation {{ vcd.memoryQuota | trim }} -StorageAllocation {{ vcd.storageQuota | trim }} -Description 'Organización {{ vcd.orgFullName }} - creado por AWX' -IsTrialMode {{ vcd.trial | bool | ternary('$True', '$False') }}
+        & 'D:\Users\Jeferson Diaz\Documents\g6\Ansible\orgvcd.ps1' -AllocationModel '{{allocation_model | trim}}' -Server 'https://vcd-lab.clarocloud.com' -Username '{{ vcd.user }}' -Password '{{ vcd.password }}' -OrgName '{{ vcd.orgFullName }}' -VdcName '{{ vcd.orgVdcName }}' -ProvName '{{ provider_match.name | default('') }}' -CpName '{{ compute_match.name | default('') }}' -SpName '{{ storage_match.name | default('') }}' -NpName '{{ network_match.name | default('') }}' -CpuAllocation {{ vcd.cpuQuota | trim }} -MemoryAllocation {{ vcd.memoryQuota | trim }} -StorageAllocation {{ vcd.storageQuota | trim }} -Description 'Organización {{ vcd.orgFullName }} - creado por AWX' -IsTrialMode {{ vcd.trial | bool | ternary('$True', '$False') }}
       vars:
         ansible_connection: winrm
         ansible_host: "unmotherly-unchipped-kenda.ngrok-free.dev"
@@ -302,14 +302,15 @@
 
     - name: Eliminar Org VDC usando el ID extraído (SI EXISTE)
       ansible.builtin.win_shell: >
-        & 'C:\Users\jeferson.diaz\Documents\WindowsPowerShell\Scripts\delete_orgvdc.ps1' -VdcId '{{ created_vdc_id }}' -Server '{{ vcd.host }}' -Username '{{ vcd.user }}' -Password '{{ vcd.password }}'
+        & 'C:\Users\jeferson.diaz\Documents\WindowsPowerShell\Scripts\delete_orgvdc.ps1' -VdcId '{{ created_vdc_id }}' -Server 'https://vcd-lab.clarocloud.com' -Username '{{ vcd.user }}' -Password '{{ vcd.password }}'
       vars:
         ansible_connection: winrm
-        ansible_host: "10.10.201.250"
-        ansible_port: 5985
-        ansible_user: "jeferson.diaz"
-        ansible_password: "Triara.2025.."
+        ansible_host: "unmotherly-unchipped-kenda.ngrok-free.dev"
+        ansible_port: 443
+        ansible_user: "jeferson diaz"
+        ansible_password: "Zero.eg9olj12*"
         ansible_winrm_transport: basic
+        ansible_winrm_scheme: https
         ansible_winrm_server_cert_validation: ignore
       # Solo intenta eliminar si el ID fue extraído
       when: created_vdc_id is defined and created_vdc_id != ''
