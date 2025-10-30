@@ -142,10 +142,25 @@
         msg: "Rollback activado debido a un fallo en la creación de Edge Gateway o configuración de servicios."
       delegate_to: localhost
       connection: local
+    #- name: 3.1 Eliminar Edge Gateway usando PowerCLI (SI LA CREACIÓN SE INICIÓ)
+      #ansible.builtin.win_shell: |
+        #pwsh.exe -ExecutionPolicy Bypass -File "C:\Users\jeferson.diaz\Documents\WindowsPowerShell\Scripts\delete_edge.ps1 ' -AccesToken '{{ vcd.access_token }}' -EdgeName '{{ edgeGatewayName }}' -Server '{{ vcd.host }}' -Username '{{ vcd.user }}'
+      #vars:
+        #ansible_connection: winrm
+        #ansible_host: "10.10.201.250"
+        #ansible_port: 5985
+        #ansible_user: "clarocloud\\jeferson.diaz"
+        #ansible_password: "Triara.2025.."
+        #ansible_winrm_transport: basic
+        #ansible_winrm_server_cert_validation: ignore
+      #register: edge_result
+      #failed_when: edge_result.rc != 0 or ('"success":false' in edge_result.stdout if edge_result.stdout else false)
+      #delegate_to: win-builder
+
 
     - name: 3.1 Eliminar Edge Gateway usando PowerCLI (SI LA CREACIÓN SE INICIÓ)
       ansible.builtin.win_shell: >
-        & 'D:\Users\Jeferson Diaz\Documents\g6\Ansible\delete_edge.ps1' -OrgVdcName '{{ vcd.orgVdcName }}' -EdgeName '{{ edge_id }}' -Server 'https://vcd-lab.clarocloud.com' -Username '{{ vcd.user }}' -Password '{{ vcd.password }}'
+        & 'D:\Users\Jeferson Diaz\Documents\g6\Ansible\delete_edge.ps1' -AccesToken '{{ vcd.access_token }}' -EdgeName '{{ edgeGatewayName }}' -Server '{{ vcd.host }}' -Username '{{ vcd.user }}'
       vars:
         ansible_connection: winrm
         ansible_host: "unmotherly-unchipped-kenda.ngrok-free.dev"
